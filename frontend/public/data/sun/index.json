@@ -1,0 +1,123 @@
+{
+ "start_utc": "2026-01-01T00:00:00Z",
+ "step_hours": 1.0,
+ "height_m": 10.0,
+ "layout": [
+  "frac",
+  "sun_el",
+  "sun_dist_km",
+  "contact"
+ ],
+ "dtype": "float32-le",
+ "sites": {
+  "artemis-hw": {
+   "region": "Haworth",
+   "lat": -86.342194,
+   "lon": -23.21082,
+   "target_rank": 1,
+   "target": {
+    "lat": -86.34879,
+    "lon": -23.21082
+   },
+   "pick": "lightest_kit",
+   "kit_total_kg": 32969.4
+  },
+  "artemis-ma": {
+   "region": "Malapert Massif",
+   "lat": -86.038865,
+   "lon": 3.120589,
+   "target_rank": 1,
+   "target": {
+    "lat": -86.03359,
+    "lon": 3.07285
+   },
+   "pick": "most_sunlight",
+   "kit_total_kg": 25297.0
+  },
+  "artemis-mm": {
+   "region": "Mons Mouton",
+   "lat": -85.478221,
+   "lon": 31.36361,
+   "target_rank": 1,
+   "target": {
+    "lat": -85.4802,
+    "lon": 31.36361
+   },
+   "pick": "most_sunlight",
+   "kit_total_kg": 22490.2
+  },
+  "artemis-mp": {
+   "region": "Mons Mouton Plateau",
+   "lat": -84.673666,
+   "lon": 39.415899,
+   "target_rank": 1,
+   "target": {
+    "lat": -84.67367,
+    "lon": 39.48695
+   },
+   "pick": "lightest_kit",
+   "kit_total_kg": 22471.6
+  },
+  "artemis-n1": {
+   "region": "Nobile Rim 1",
+   "lat": -85.540812,
+   "lon": 37.616697,
+   "target_rank": 1,
+   "target": {
+    "lat": -85.54411,
+    "lon": 37.62518
+   },
+   "pick": "lightest_kit",
+   "kit_total_kg": 22082.9
+  },
+  "artemis-n2": {
+   "region": "Nobile Rim 2",
+   "lat": -84.091012,
+   "lon": 59.589543,
+   "target_rank": 1,
+   "target": {
+    "lat": -84.09431,
+    "lon": 59.61517
+   },
+   "pick": "lightest_kit",
+   "kit_total_kg": 36016.2
+  },
+  "artemis-cb": {
+   "region": "Peak Near Cabeus B",
+   "lat": -83.578991,
+   "lon": -68.479134,
+   "target_rank": 1,
+   "target": {
+    "lat": -83.58361,
+    "lon": -68.43785
+   },
+   "pick": "lightest_kit",
+   "kit_total_kg": 29137.8
+  },
+  "artemis-sp": {
+   "region": "Slater Plain",
+   "lat": -87.228543,
+   "lon": 127.322033,
+   "target_rank": 1,
+   "target": {
+    "lat": -87.23448,
+    "lon": 127.26747
+   },
+   "pick": "lightest_kit",
+   "kit_total_kg": 33250.9
+  },
+  "artemis-g2": {
+   "region": "de Gerlache Rim 2",
+   "lat": -88.592079,
+   "lon": -67.720074,
+   "target_rank": 1,
+   "target": {
+    "lat": -88.58747,
+    "lon": -67.90798
+   },
+   "pick": "lightest_kit",
+   "kit_total_kg": 18937.2
+  }
+ },
+ "n": 96433
+}

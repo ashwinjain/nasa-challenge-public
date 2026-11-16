@@ -1,0 +1,77 @@
+# Builds Dockerfile.cloudflare and deploys the API Worker + container
+# (api-worker/) from GitHub's servers, so the ~750 MB image never has to be
+# uploaded from a laptop. Needs the CLOUDFLARE_API_TOKEN repo secret
+# (Workers Scripts, Containers and R2 edit permissions).
+name: Deploy API (Cloudflare)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile.cloudflare"
+      - "pyproject.toml"
+      - "lunarsky/**"
+      - "api-worker/**"
+      - "data/phase-1/**"
+      - "data/phase-3/sites.csv"
+      - "data/phase-4/assumptions.csv"
+      - ".github/workflows/deploy-api.yml"
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_ACCOUNT_ID: bc018bdd687075aa4eb1a50acf23c78f
+    steps:
+      - uses: actions/checkout@v4
+
+      # The 80 m and 240 m maps aren't in git (data/phase-2/README.md).
+      - name: Cache the phase-2 maps
+        id: maps
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/phase-2/LDEM_80S_80MPP_ADJ.TIF
+            data/phase-2/LDEM_60S_240MPP_ADJ.TIF
+          key: phase2-maps-82030dcb-3f966325
+
+      - name: Download the phase-2 maps
+        if: steps.maps.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p data/phase-2 && cd data/phase-2
+          curl -fL --retry 10 --retry-delay 15 --retry-all-errors \
+            -O https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_80S_80MPP_ADJ.TIF \
+            -O https://pgda.gsfc.nasa.gov/data/LOLA_20mpp/LDEM_60S_240MPP_ADJ.TIF
+
+      - name: Check the maps
+        run: |
+          cd data/phase-2
+          printf '%s  %s\n' \
+            82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a LDEM_80S_80MPP_ADJ.TIF \
+            3f9663257b63022f2b0d5a623482ff3cadddceb91594a4e4ca14a94d8cec8b34 LDEM_60S_240MPP_ADJ.TIF \
+            | sha256sum -c -
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Deploy
+        working-directory: api-worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npm ci
+          npx wrangler deploy
+
+      - name: Smoke test
+        run: |
+          sleep 20
+          curl -fsS --retry 6 --retry-delay 20 --retry-all-errors \
+            "https://lunar-navigator-api.1ashwinjain.workers.dev/api/power?lat=-86.00114&lon=2.05502&start=2026-01-01&days=7&height_m=10" \
+            | head -c 1500

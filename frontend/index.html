@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lunar Landing Site Navigator</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Three.js 3D scene -->
+  <div id="scene-container"></div>
+
+  <!-- Intro overlay -->
+  <div id="intro-overlay">
+    <div id="intro-hud">
+      <div class="hud-title">LUNAR LANDING SITE NAVIGATOR</div>
+      <div class="hud-subtitle">Artemis South Pole Mission Planning</div>
+      <div id="intro-status">Initializing...</div>
+    </div>
+    <button id="skip-intro" class="hud-btn">Skip Intro</button>
+    <button id="explore-btn" class="hud-btn primary" style="display:none">Explore Sites &rarr;</button>
+  </div>
+
+  <!-- Main HUD (visible after intro) -->
+  <div id="main-hud" style="display:none">
+
+    <!-- ── Site markers overlay (the 9 Artemis III regions; dots + leader lines + labels) ── -->
+    <div id="site-markers">
+      <svg id="site-leaders"></svg>
+    </div>
+
+    <!-- ── Lander + panel-spot labels (surface view only) ── -->
+    <div id="surface-markers"></div>
+
+    <!-- ── Top toolbar ── -->
+    <div id="top-bar" class="top-bar">
+      <div id="top-bar-brand" class="brand">
+        <span class="brand-mark">&#9790;</span>
+        <div class="brand-text">
+          <span class="brand-title">LUNAR NAV</span>
+          <span class="brand-sub">Artemis Site Planner</span>
+        </div>
+      </div>
+      <button id="plan-btn" class="plan-action" title="Rank sites by date, compare stays, and size power and landing">Plan &amp; Compare &rarr;</button>
+      <div id="custom-coords" style="display:none">
+        <label class="coord-label">LAT <input type="number" id="custom-lat" min="-90" max="90" step="0.01" /></label>
+        <label class="coord-label">LON <input type="number" id="custom-lon" min="-180" max="180" step="0.01" /></label>
+      </div>
+    </div>
+
+    <!-- Centered floating action to drop onto the selected site's surface. -->
+    <button id="surface-btn" class="surface-action" aria-label="Stand on the surface">
+      <svg id="surface-icon" width="18" height="18" viewBox="0 0 14 14" aria-hidden="true"><path d="M1 10.5 Q4 7 7 8.4 T13 7.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="7" cy="4.3" r="1.5" fill="currentColor"/><path d="M7 5.8 V8.2 M5.6 10.8 L7 8.2 L8.4 10.8" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="surface-btn-label">Stand on the surface</span>
+    </button>
+
+    <!-- ── Left sidebar: Site list ── -->
+    <div id="site-sidebar">
+      <div class="sidebar-header">
+        <h3>Sites</h3>
+        <span class="sidebar-count" id="site-count">9</span>
+      </div>
+      <div id="site-list" class="site-list"></div>
+    </div>
+
+    <!-- ── Time scrubber ── -->
+    <div id="time-scrubber-container">
+      <div class="scrubber-row">
+        <button id="play-btn" class="scrubber-btn" title="Play (Space)" aria-label="Play" disabled>
+          <svg class="icon-play" width="13" height="13" viewBox="0 0 12 12" aria-hidden="true"><path d="M3.6 2.7 L9.4 6 L3.6 9.3 Z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          <svg class="icon-pause" width="13" height="13" viewBox="0 0 12 12" aria-hidden="true"><rect x="3.2" y="2.4" width="2.2" height="7.2" rx="1.1" fill="currentColor"/><rect x="6.6" y="2.4" width="2.2" height="7.2" rx="1.1" fill="currentColor"/></svg>
+        </button>
+        <button id="speed-btn" class="scrubber-btn" title="Playback speed: days of data per second" aria-label="Playback speed">1 d/s</button>
+        <div class="scrubber-viz">
+          <div class="scrubber-head">
+            <span id="time-label"></span>
+            <div class="scrubber-legend">
+              <span class="sl-sun">Sun</span><span class="sl-earth">Earth</span><span class="sl-both">Both</span>
+            </div>
+          </div>
+          <svg class="scrubber-tracks" id="scrubber-tracks" viewBox="0 0 1000 20" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <input type="range" id="time-scrubber" min="0" max="100" value="0" aria-label="Time in the playback window" />
+          <div class="scrubber-dates" id="scrubber-dates"></div>
+        </div>
+        <!-- Playback window: drives only the timeline, the 3D Sun/Earth and
+             the Sky chart. Every number on the page is full-year. -->
+        <div id="date-range">
+          <button id="date-pill" class="date-pill" aria-label="Playback window: pick the dates the timeline plays" title="Playback window: what the timeline, Sun/Earth positions and Sky chart play. The numbers on this page are full-year and do not change with it.">
+            <span class="date-pill-text"><span class="date-pill-key">Playback</span><span id="date-pill-label">Jan 1 – Feb 1, 2027</span></span>
+            <svg class="date-pill-caret" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 L5 6.5 L8 3.5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <input type="hidden" id="date-start" value="2027-01-01" />
+          <input type="hidden" id="date-end" value="2027-02-01" />
+        </div>
+        <button id="eph-info-btn" class="scrubber-btn" title="Where these positions come from" aria-label="About the ephemeris driving this timeline" aria-expanded="false" aria-controls="eph-info-pop">
+          <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.3" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="6" cy="3.3" r="0.85" fill="currentColor"/><rect x="5.25" y="5" width="1.5" height="4" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <!-- Ephemeris provenance: the scrubber samples these positions across the
+           playback window, so the "where from" note lives here. -->
+      <div id="eph-info-pop" class="eph-pop" hidden role="dialog" aria-label="Ephemeris source">
+        <div class="eph-pop-row"><span class="eph-pop-key">Ephemeris</span><span class="eph-pop-val"><a href="https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/" target="_blank" rel="noopener">JPL DE421 &nearr;</a></span></div>
+        <div class="eph-pop-row"><span class="eph-pop-key">Frame</span><span class="eph-pop-val">MOON_ME (IAU)</span></div>
+        <div class="eph-pop-row"><span class="eph-pop-key">Body</span><span class="eph-pop-val">Moon</span></div>
+        <p class="eph-pop-note">Sun, Earth and Moon positions come from NASA JPL's DE421 ephemeris, in the IAU Moon mean-Earth / polar-axis frame. Scrubbing the timeline samples this across the playback window. <a href="https://naif.jpl.nasa.gov/naif/data_generic.html" target="_blank" rel="noopener">The source kernels &nearr;</a></p>
+      </div>
+      <!-- Playback window calendar (opens above the timeline) -->
+      <div id="date-picker" class="date-picker" style="display:none">
+        <div class="dp-header">
+          <button class="dp-nav" id="dp-prev-year" title="Previous year">&laquo;</button>
+          <button class="dp-nav" id="dp-prev-month" title="Previous month">&lsaquo;</button>
+          <span class="dp-title" id="dp-title">Jan 2027</span>
+          <button class="dp-nav" id="dp-next-month" title="Next month">&rsaquo;</button>
+          <button class="dp-nav" id="dp-next-year" title="Next year">&raquo;</button>
+        </div>
+        <div class="dp-weekdays">
+          <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+        </div>
+        <div class="dp-days" id="dp-days"></div>
+        <div class="dp-hint" id="dp-hint">Pick a start date</div>
+      </div>
+    </div>
+
+    <!-- ── Dockable panels ── -->
+    <!-- Full-year tiles for the selected site, in the gap between the left column and the Sky panel. -->
+    <div id="timeline-metrics" class="metrics-strip" style="display:none"></div>
+
+    <div id="sky-panel" class="panel dockable">
+      <div class="panel-header">
+        <div class="panel-header-left">
+          <h3>Sky</h3>
+          <span class="panel-origin">(from site origin)</span>
+        </div>
+        <div class="panel-header-actions">
+          <button class="panel-btn panel-toggle" data-panel="sky-panel" title="Collapse">
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5l3 3 3-3" stroke="currentColor" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="panel-note">Sun &amp; Earth tracks &mdash; azimuth from north, true elevation</div>
+        <div id="sky-chart-wrap"><svg id="sky-chart"></svg></div>
+      </div>
+      <div class="panel-resize"></div>
+    </div>
+
+    <div id="panel-site-panel" class="panel dockable">
+      <div class="panel-header ps-header" data-panel="panel-site-panel">
+        <div class="panel-header-left ps-head-text">
+          <h3 id="ps-head-title">Landing &amp; power</h3>
+          <span id="ps-head-sub" class="ps-head-sub"></span>
+        </div>
+        <div class="panel-header-actions">
+          <span id="ps-head-kit" class="ps-head-kit"></span>
+          <span id="ps-head-info" class="ps-info" tabindex="0" hidden>i</span>
+          <button class="panel-btn panel-toggle" data-panel="panel-site-panel" title="Collapse">
+            <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 3.5l3 3 3-3" stroke="currentColor" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="panel-site-body" class="ps-empty">Pick a site to search for panel spots.</div>
+      </div>
+      <div class="panel-resize"></div>
+    </div>
+
+    <!-- ── Site details popup (top-right, on site click) ── -->
+    <div id="site-info" class="site-info" style="display:none" role="dialog" aria-label="Site details">
+      <div class="site-info-header">
+        <div class="site-info-title">
+          <span class="site-info-eyebrow">Site details</span>
+          <span class="site-info-name" id="site-info-name">&mdash;</span>
+        </div>
+        <button id="site-info-close" class="site-info-close" title="Close" aria-label="Close details">
+          <svg width="12" height="12" viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="site-info-body" id="site-info-body"></div>
+      <div class="site-info-foot">Full source record: <a href="https://github.com/ashwinjain/nasa-challenge/blob/main/data/phase-3/sites.csv" target="_blank" rel="noopener">view sites.csv on GitHub &nearr;</a></div>
+    </div>
+
+    <!-- Off-screen body indicators -->
+    <div id="indicator-sun" class="body-indicator sun" style="display:none">
+      <span class="indicator-caret">&#9656;</span>
+      <span class="indicator-label">Sun</span>
+    </div>
+    <div id="indicator-earth" class="body-indicator earth" style="display:none">
+      <span class="indicator-caret">&#9656;</span>
+      <span class="indicator-label">Earth</span>
+    </div>
+
+    <!-- ── Bottom status bar: camera readout only (everything else moved to
+         the timeline ⓘ or was redundant with the top bar / scrubber). ── -->
+    <!-- Keyboard hint for focus mode, bottom-left (the Sky panel has bottom-right). -->
+    <!-- Walking keys and distance from the lander (surface view only). -->
+    <div id="walk-hint" class="walk-hint" hidden></div>
+    <!-- Globe map layer: permanently shadowed regions on the south polar cap. -->
+    <label id="psr-toggle" class="layer-toggle" title="Permanently shadowed regions over 1 km² (NASA LOLA, Barker et al. 2023). Shown on the globe up close at the south pole. Information only.">
+      <input type="checkbox" id="psr-toggle-input" checked />
+      <span class="layer-swatch psr" aria-hidden="true"></span>
+      Permanently shadowed (possible ice)
+    </label>
+    <button id="focus-hint" class="focus-hint" aria-label="Toggle focus mode (F)"><kbd>F</kbd> <span id="focus-hint-label">Focus</span></button>
+    <div id="status-bar">
+      <!-- Assumptions behind the numbers: a page of their own (assumptions.html,
+           list in src/shared/assumptions.js), opened in a new tab. -->
+      <a id="assume-btn" class="assume-btn" href="/assumptions.html" target="_blank" rel="noopener">
+        <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.25" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M6 5.4v3.2M6 3.4v.2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Assumptions
+      </a>
+      <div class="status-section status-right">
+        <span class="status-key">CAM</span>
+        <span class="status-val" id="cam-debug">H:-- P:-- R:--</span>
+      </div>
+    </div>
+
+    <!-- Dock zone hints (shown while dragging) -->
+    <div id="dock-zones">
+      <div class="dock-zone" data-corner="top-left"></div>
+      <div class="dock-zone" data-corner="top-right"></div>
+      <div class="dock-zone" data-corner="bottom-left"></div>
+      <div class="dock-zone" data-corner="bottom-right"></div>
+    </div>
+  </div>
+
+  <!-- ── Plan & compare: full-screen view over the 3D scene (src/plan/) ── -->
+  <div id="plan-overlay" hidden>
+    <div id="plan-top" class="top-bar">
+      <button id="plan-back" class="brand plan-back" title="Back to the 3D view">
+        <span class="brand-mark">&larr;</span>
+        <span class="brand-text">
+          <span class="brand-title">LUNAR NAV</span>
+          <span class="brand-sub">Back to 3D</span>
+        </span>
+      </button>
+      <div class="toolbar-divider"></div>
+      <div id="plan-inputs"></div>
+    </div>
+
+    <main class="plan-main">
+      <section class="panel plan-panel">
+        <div class="panel-header">
+          <div class="panel-header-left">
+            <h3>Plan</h3>
+            <div class="seg" id="plan-views"></div>
+          </div>
+          <div class="seg" id="plan-metrics"></div>
+        </div>
+        <div class="plan-body" id="plan-body">Loading…</div>
+      </section>
+
+      <section class="panel plan-panel">
+        <div class="panel-header">
+          <div class="panel-header-left"><h3>Compare <span id="tray-count"></span></h3></div>
+          <div class="panel-header-actions">
+            <span id="tray-flash"></span>
+          </div>
+        </div>
+        <div class="plan-body" id="tray-body"></div>
+      </section>
+
+      <section class="panel plan-panel">
+        <div class="panel-header">
+          <div class="panel-header-left"><h3>Power &amp; landing</h3></div>
+        </div>
+        <div class="plan-body" id="power-body"></div>
+      </section>
+    </main>
+
+    <div id="plan-tooltip"></div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

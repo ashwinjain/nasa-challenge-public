@@ -1,0 +1,18 @@
+{
+ "year": 2031,
+ "start_utc": "2031-01-01T00:00:00Z",
+ "end_utc": "2032-03-01T00:00:00Z",
+ "max_stay_days": 60,
+ "step_hours": 1.0,
+ "sites": [
+  "artemis-hw",
+  "artemis-ma",
+  "artemis-mm",
+  "artemis-mp",
+  "artemis-n1",
+  "artemis-n2",
+  "artemis-cb",
+  "artemis-sp",
+  "artemis-g2"
+ ]
+}

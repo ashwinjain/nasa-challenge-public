@@ -1,0 +1,118 @@
+{
+ "note": "Information only: it never changes the kit or a ranking. Distances are straight lines from each region's reference point (its sunniest spot) to the edge of the nearest permanently shadowed area of at least 1 km2; smaller shadowed spots closer by are not counted. 'Cold enough' means ice could survive there, not that ice has been found. Every one is too far to walk (the on-foot reach is 300 m), so reaching it needs a rover.",
+ "cold_enough_below_K": 110,
+ "sources": [
+  "Permanently shadowed areas: LOLA 20 m map, Barker et al. 2023 (NASA PGDA product 90)",
+  "Temperatures and ice depth: LRO Diviner polar resource products, Paige et al."
+ ],
+ "regions": [
+  {
+   "id": "artemis-g2",
+   "region": "de Gerlache Rim 2",
+   "nearest_shadowed_area": {
+    "area_km2": 3.5,
+    "distance_km": 6.7,
+    "hottest_it_gets_K": 141,
+    "share_cold_enough_for_surface_ice_pct": 45,
+    "share_with_stable_ice_within_3m_depth_pct": 100,
+    "typical_depth_to_stable_ice_m": 0.01
+   }
+  },
+  {
+   "id": "artemis-hw",
+   "region": "Haworth",
+   "nearest_shadowed_area": {
+    "area_km2": 3.6,
+    "distance_km": 9.4,
+    "hottest_it_gets_K": 73,
+    "share_cold_enough_for_surface_ice_pct": 76,
+    "share_with_stable_ice_within_3m_depth_pct": 100,
+    "typical_depth_to_stable_ice_m": 0.0
+   }
+  },
+  {
+   "id": "artemis-ma",
+   "region": "Malapert Massif",
+   "nearest_shadowed_area": {
+    "area_km2": 1.4,
+    "distance_km": 10.2,
+    "hottest_it_gets_K": 159,
+    "share_cold_enough_for_surface_ice_pct": 27,
+    "share_with_stable_ice_within_3m_depth_pct": 100,
+    "typical_depth_to_stable_ice_m": 0.01
+   }
+  },
+  {
+   "id": "artemis-mm",
+   "region": "Mons Mouton",
+   "nearest_shadowed_area": {
+    "area_km2": 6.3,
+    "distance_km": 6.0,
+    "hottest_it_gets_K": 80,
+    "share_cold_enough_for_surface_ice_pct": 67,
+    "share_with_stable_ice_within_3m_depth_pct": 100,
+    "typical_depth_to_stable_ice_m": 0.0
+   }
+  },
+  {
+   "id": "artemis-mp",
+   "region": "Mons Mouton Plateau",
+   "nearest_shadowed_area": {
+    "area_km2": 6.3,
+    "distance_km": 11.9,
+    "hottest_it_gets_K": 80,
+    "share_cold_enough_for_surface_ice_pct": 67,
+    "share_with_stable_ice_within_3m_depth_pct": 100,
+    "typical_depth_to_stable_ice_m": 0.0
+   }
+  },
+  {
+   "id": "artemis-n1",
+   "region": "Nobile Rim 1",
+   "nearest_shadowed_area": {
+    "area_km2": 1.0,
+    "distance_km": 5.0,
+    "hottest_it_gets_K": 180,
+    "share_cold_enough_for_surface_ice_pct": 29,
+    "share_with_stable_ice_within_3m_depth_pct": 100,
+    "typical_depth_to_stable_ice_m": 0.01
+   }
+  },
+  {
+   "id": "artemis-n2",
+   "region": "Nobile Rim 2",
+   "nearest_shadowed_area": {
+    "area_km2": 3.6,
+    "distance_km": 6.6,
+    "hottest_it_gets_K": 235,
+    "share_cold_enough_for_surface_ice_pct": 28,
+    "share_with_stable_ice_within_3m_depth_pct": 100,
+    "typical_depth_to_stable_ice_m": 0.01
+   }
+  },
+  {
+   "id": "artemis-cb",
+   "region": "Peak Near Cabeus B",
+   "nearest_shadowed_area": {
+    "area_km2": 2.2,
+    "distance_km": 13.5,
+    "hottest_it_gets_K": 221,
+    "share_cold_enough_for_surface_ice_pct": 0,
+    "share_with_stable_ice_within_3m_depth_pct": 81,
+    "typical_depth_to_stable_ice_m": 0.24
+   }
+  },
+  {
+   "id": "artemis-sp",
+   "region": "Slater Plain",
+   "nearest_shadowed_area": {
+    "area_km2": 60.6,
+    "distance_km": 9.7,
+    "hottest_it_gets_K": 77,
+    "share_cold_enough_for_surface_ice_pct": 100,
+    "share_with_stable_ice_within_3m_depth_pct": 100,
+    "typical_depth_to_stable_ice_m": 0.0
+   }
+  }
+ ]
+}

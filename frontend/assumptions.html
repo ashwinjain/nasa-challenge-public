@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assumptions · Lunar Landing Site Navigator</title>
+  <link rel="stylesheet" href="/src/assumptions.css" />
+</head>
+<body>
+  <!-- Every assumption behind the app's numbers. The list lives in
+       src/shared/assumptions.js; the Assumptions button in the app opens
+       this page in a new tab. -->
+  <main class="ap">
+    <header class="ap-head">
+      <a class="ap-back" href="/">Lunar Landing Site Navigator</a>
+      <h1>Assumptions</h1>
+      <p class="ap-lead">What the numbers rest on. Each assumption says what it leaves out and why we made it.
+        <span class="ap-ours">Our choice</span> marks one with no outside source.</p>
+      <nav id="ap-nav" class="ap-nav" aria-label="Sections"></nav>
+    </header>
+    <div id="ap-list"></div>
+  </main>
+  <script type="module" src="/src/assumptions-page.js"></script>
+</body>
+</html>

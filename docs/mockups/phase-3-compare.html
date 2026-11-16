@@ -1,0 +1,100 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+:root{--bg:#060810;--panel:#0a0c14;--border:rgba(80,120,180,.18);--border2:rgba(80,120,180,.35);--text:#c0c8d8;--mid:#8894aa;--dim:#505a70;--amber:#e8a020;--cyan:#38b8d0;--green:#38c868;--red:#d04040}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,Inter,system-ui,sans-serif;width:1400px;padding:0}
+.top *{white-space:nowrap}
+.mono{font-family:"SF Mono",Menlo,monospace}
+.top{height:44px;display:flex;align-items:center;gap:7px;padding:0 14px;border-bottom:1px solid var(--border);background:var(--panel)}
+.brand{color:var(--cyan);font-size:12px;letter-spacing:.12em;margin-right:4px}
+.lab{font-size:9px;letter-spacing:.14em;color:var(--dim)}
+.f{border:1px solid var(--border);padding:4px 9px;font-size:12px;color:var(--cyan)}
+.b{border:1px solid var(--border);padding:4px 8px;font-size:11px;color:var(--mid);background:#0e121e}
+.b.on{border-color:var(--cyan);color:var(--cyan);background:rgba(56,184,208,.12)}
+.div{width:1px;height:22px;background:var(--border)}
+.slipnote{padding:7px 14px;font-size:12px;color:var(--mid);border-bottom:1px solid var(--border);background:#080a12}
+.slipnote b{color:var(--amber);font-weight:500}
+.wrap{padding:14px;display:grid;grid-template-columns:1fr;gap:14px}
+.panel{border:1px solid var(--border);background:var(--panel)}
+.ph{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border)}
+.ph h3{font-size:10px;letter-spacing:.18em;color:var(--mid);font-weight:500}
+.pb{padding:12px}
+.grid{display:grid;grid-template-columns:150px repeat(12,1fr);gap:3px;align-items:center}
+.cell{height:24px;border-radius:2px}
+.sel{outline:2px solid #fff;outline-offset:-1px}
+.mon{font-size:10px;color:var(--dim);text-align:center}
+.site{font-size:11px;color:var(--mid);white-space:nowrap}
+.cmp{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sc{border:1px solid var(--border);padding:10px;background:rgba(30,30,45,.5)}
+.sc.empty{border-style:dashed;display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:12px}
+.sc .n{font-size:13px;color:var(--text)}
+.sc .d{font-size:10px;color:var(--dim);margin:2px 0 8px}
+.kv{display:grid;grid-template-columns:1fr auto;row-gap:4px;font-size:11px}
+.kv span:nth-child(odd){color:var(--dim);text-transform:uppercase;letter-spacing:.05em;font-size:9.5px}
+.kv span:nth-child(even){font-family:"SF Mono",Menlo,monospace}
+.bars{display:flex;gap:2px;margin-bottom:4px}
+.bars div{flex:1;height:9px}
+</style></head><body>
+<div class="top">
+  <span class="brand">☾ LUNAR NAV</span><div class="div"></div>
+  <span class="lab">SITE</span><span class="f">Mons Mouton Plateau</span>
+  <span class="lab">LANDING</span><span class="f mono">2027-08-14</span>
+  <span class="lab">SLIP</span>
+  <span class="b mono">−1 mo</span><span class="b mono">−1 wk</span><span class="b mono">−1 d</span><span class="b mono">+1 d</span><span class="b mono on">+1 wk</span><span class="b mono">+1 mo</span>
+  <div class="div"></div>
+  <span class="lab">MISSION</span><span class="b mono">7 d</span><span class="b mono on">14 d</span><span class="b mono">30 d</span>
+  <div class="div"></div>
+  <span class="lab">HORIZON</span><span class="b">Smooth</span><span class="b on">Terrain</span><span class="b mono">2 m eye</span>
+</div>
+<div class="slipnote">→ Slipped one week from 2027-08-07: sunlit <b>71% → 88%</b> (+17 pts) · longest dark <b>4.1 d → 1.6 d</b> · Earth in view 64% → 52% · longest blackout 3.8 d → 5.2 d</div>
+<div class="wrap">
+  <div class="panel">
+    <div class="ph"><h3>SITES × LANDING MONTH · 2027</h3>
+      <div style="display:flex;gap:4px"><span class="b on">Sunlit %</span><span class="b">Longest dark</span><span class="b">Earth in view</span><span class="b">Longest blackout</span></div></div>
+    <div class="pb">
+      <div class="grid" id="grid"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:var(--dim)">
+        <span>0%</span><span id="leg" style="display:flex;gap:2px"></span><span id="legtxt">100% of a 14-day stay in sunlight</span>
+        <span style="margin-left:auto">Terrain · 2 m eye · click a cell to load that site and date</span>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="ph"><h3>COMPARE · 3 OF 4 PINNED</h3><span class="b on">📌 Pin current</span></div>
+    <div class="pb"><div class="cmp" id="cmp"></div></div>
+  </div>
+</div>
+<script>
+const sites=["Haworth","Malapert Massif","Mons Mouton","Mons Mouton Plateau","Nobile Rim 1","Nobile Rim 2","Peak Near Cabeus B","Slater Plain","de Gerlache Rim 2","Blue Moon MK1"];
+const EARTH=location.search.includes("earth");
+const ramp=EARTH?["#061418","#0a2a33","#0f4553","#156477","#1f87a0","#38b8d0","#8fe4f2"]:["#1a1206","#3d2808","#6a430c","#9c6410","#cf8618","#f0a830","#ffd27a"];
+if(EARTH){document.querySelectorAll(".ph .b").forEach(b=>{b.classList.toggle("on",b.textContent==="Earth in view")});}
+const g=document.getElementById("grid");
+g.insertAdjacentHTML("beforeend","<div></div>");
+const M="JFMAMJJASOND";
+const MN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];for(let i=0;i<12;i++)g.insertAdjacentHTML("beforeend",`<div class="mon">${MN[i]}</div>`);
+let s=11;const r=()=>{s=(s*9301+49297)%233280;return s/233280};
+sites.forEach((n,si)=>{
+  g.insertAdjacentHTML("beforeend",`<div class="site">${n}</div>`);
+  const base=EARTH?[.48,.7,.66,.6,.68,.82,.75,.4,.55,.62][si]:[.6,.8,.72,.76,.8,.55,.62,.58,.72,.83][si];
+  for(let i=0;i<12;i++){
+    const m=i%12+1;
+    const v=Math.max(0,Math.min(.999,EARTH?base+(r()-.5)*.55:base+.22*Math.cos((m-7)/12*2*Math.PI+si*.5)+(r()-.5)*.18));
+    g.insertAdjacentHTML("beforeend",`<div class="cell${si===3&&i===7?" sel":""}" style="background:${ramp[Math.floor(v*7)]}"></div>`);
+  }
+});
+if(EARTH)document.getElementById("legtxt").textContent="100% of a 14-day stay with Earth in view";
+document.getElementById("leg").innerHTML=ramp.map(c=>`<span style="width:22px;height:10px;background:${c};display:inline-block"></span>`).join("");
+const sc=[
+ {n:"Mons Mouton Plateau",d:"Land 2027-08-14 · 14 d · terrain 2 m",sun:"88%",dark:"1.6 d",earth:"52%",bo:"5.2 d",bar:"11111011111111",c:"var(--green)"},
+ {n:"Malapert Massif",d:"Land 2027-08-14 · 14 d · terrain 2 m",sun:"79%",dark:"2.9 d",earth:"71%",bo:"3.0 d",bar:"11100011111110",c:""},
+ {n:"Haworth",d:"Land 2027-12-02 · 14 d · terrain 2 m",sun:"41%",dark:"7.8 d",earth:"48%",bo:"6.4 d",bar:"00000001111110",c:"var(--red)"}];
+const cmp=document.getElementById("cmp");
+sc.forEach(x=>cmp.insertAdjacentHTML("beforeend",`<div class="sc"><div class="n">${x.n}</div><div class="d">${x.d}</div>
+<div class="bars">${[...x.bar].map(b=>`<div style="background:${b==="1"?"#e8a020":"rgba(30,30,45,.9)"}"></div>`).join("")}</div>
+<div class="bars" style="margin-bottom:10px">${[...x.bar].map((b,i)=>`<div style="background:${(i*7+x.n.length)%5?"#38b8d0":"rgba(30,30,45,.9)"};opacity:.8"></div>`).join("")}</div>
+<div class="kv"><span>Sunlit</span><span style="color:${x.c||"var(--amber)"}">${x.sun}</span><span>Longest dark</span><span>${x.dark}</span><span>Earth in view</span><span style="color:var(--cyan)">${x.earth}</span><span>Longest blackout</span><span>${x.bo}</span></div></div>`));
+cmp.insertAdjacentHTML("beforeend",`<div class="sc empty">+ Pin another scenario</div>`);
+</script>
+</body></html>

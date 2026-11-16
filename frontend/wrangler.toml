@@ -1,0 +1,40 @@
+# Cloudflare Pages: the static build plus the chat's Functions (functions/api/).
+# Local:  npx wrangler pages dev   (from frontend/, after npm run build)
+name = "lunar-navigator"
+pages_build_output_dir = "dist"
+compatibility_date = "2025-10-01"
+
+[ai]
+binding = "AI"
+
+[vars]
+# The live Python backend (Cloud Run), for date ranges and points that aren't
+# precomputed: functions/api/[[path]].js forwards /api/sky etc. there.
+API_ORIGIN = "https://lunar-navigator-api-r5ewcm4c6a-uc.a.run.app"
+# Edge-cache version for /api answers (functions/api/[[path]].js): change it
+# after any backend change (the 20 m map going live, the radio power model)
+# so cached answers from the old backend stop being used.
+API_CACHE_VERSION = "2026-11-14e"
+# CHAT_MODEL = "@cf/openai/gpt-oss-120b"
+AI_GATEWAY_ID = "lunar-navigator"   # logs, 60/min rate limit, auth; see functions/api/chat.js
+AI_SEARCH_NAME = "lunar-lander"   # namespace lunar-navigator-search, over R2 bucket lunar-navigator-docs
+
+# AI Search: the docs index lives in namespace lunar-navigator-search, which
+# Pages config can't bind directly, so a small Worker (docs-worker/) holds
+# that binding and /api/docs-search calls it here.
+[[services]]
+binding = "DOCS_WORKER"
+service = "lunar-navigator-docs"
+
+# Landing-target terrain meshes (land-*.bin), served by
+# functions/data/terrain/[file].js.
+[[r2_buckets]]
+binding = "TERRAIN"
+bucket_name = "lunar-navigator-terrain"
+
+# The Python API in a Cloudflare Container (api-worker/), for custom points
+# and dates the static files don't cover. functions/api/[[path]].js forwards
+# /api/* there.
+[[services]]
+binding = "API"
+service = "lunar-navigator-api"

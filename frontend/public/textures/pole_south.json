@@ -1,0 +1,13 @@
+{
+  "half_m": 550354.2532396986,
+  "edge_lat": -72.0,
+  "texel_m": 358.3035502862621,
+  "shadow_texel_m": 1074.9106508587863,
+  "height_min_m": -7732.31640625,
+  "height_max_m": 6983.8349609375,
+  "moon_radius_m": 1737400.0,
+  "albedo_source": "NASA LROC WAC South Pole Summer Mosaic, 100 m, illumination divided out (reflectance only)",
+  "normal_source": "NASA LOLA LDEM 60S, 240 m, tangent-space normals",
+  "height_source": "NASA LOLA LDEM 60S, 240 m, 16-bit packed into R/G",
+  "psr_source": "NASA PGDA 90 (Barker et al. 2023) LOLA 20 m permanently shadowed regions >= 1 km^2, LPSR_80S_20MPP_ADJ_1km2; 8-bit coverage fraction on the albedo grid"
+}

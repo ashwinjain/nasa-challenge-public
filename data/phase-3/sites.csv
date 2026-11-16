@@ -1,0 +1,10 @@
+id,name,group,kind,lat,lon,method,avg_sunlit,sunlit_map,source,notes
+artemis-hw,Haworth,core,artemis_region,-86.36851,-23.27645,sunniest_in_region,0.705,60m,USGS Artemis III region outline (2024) + Mazarico et al. 2011 sunlight map,"888 km2 region, 247009 pixels searched"
+artemis-ma,Malapert Massif,core,artemis_region,-86.00114,2.05502,sunniest_in_region,0.819,60m,USGS Artemis III region outline (2024) + Mazarico et al. 2011 sunlight map,"441 km2 region, 122150 pixels searched"
+artemis-mm,Mons Mouton,core,artemis_region,-85.44402,32.19651,sunniest_in_region,0.747,60m,USGS Artemis III region outline (2024) + Mazarico et al. 2011 sunlight map,"256 km2 region, 71289 pixels searched"
+artemis-mp,Mons Mouton Plateau,core,artemis_region,-85.48429,29.51768,sunniest_in_region,0.784,120m,USGS Artemis III region outline (2024) + Mazarico et al. 2011 sunlight map,"4452 km2 region, 308480 pixels searched"
+artemis-n1,Nobile Rim 1,core,artemis_region,-85.30028,37.09893,sunniest_in_region,0.831,60m,USGS Artemis III region outline (2024) + Mazarico et al. 2011 sunlight map,"400 km2 region, 110556 pixels searched"
+artemis-n2,Nobile Rim 2,core,artemis_region,-83.73716,59.396,sunniest_in_region,0.539,120m,USGS Artemis III region outline (2024) + Mazarico et al. 2011 sunlight map,"400 km2 region, 27889 pixels searched"
+artemis-cb,Peak Near Cabeus B,core,artemis_region,-83.61575,-68.59059,sunniest_in_region,0.684,120m,USGS Artemis III region outline (2024) + Mazarico et al. 2011 sunlight map,"400 km2 region, 27722 pixels searched"
+artemis-sp,Slater Plain,core,artemis_region,-87.2719,127.60532,sunniest_in_region,0.658,60m,USGS Artemis III region outline (2024) + Mazarico et al. 2011 sunlight map,"400 km2 region, 110556 pixels searched"
+artemis-g2,de Gerlache Rim 2,core,artemis_region,-88.46512,-67.84885,sunniest_in_region,0.751,60m,USGS Artemis III region outline (2024) + Mazarico et al. 2011 sunlight map,"400 km2 region, 110889 pixels searched"

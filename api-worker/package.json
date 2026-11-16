@@ -1,0 +1,6 @@
+{
+  "name": "lunar-navigator-api",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@cloudflare/containers": "^0.3.7" }
+}

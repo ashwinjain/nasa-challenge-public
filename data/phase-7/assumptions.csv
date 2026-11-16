@@ -1,0 +1,16 @@
+id,category,parameter,value,low,high,units,source,notes
+ice_lcross,ice,Water in Cabeus ejecta measured by LCROSS,5.6,2.7,8.5,% by mass,Colaprete et al. 2010 Science 330:463,"5.6 +/- 2.9 wt%. One impact, one crater, so it's a single sample of one shadowed area"
+ice_lend_cabeus,ice,Peak water-equivalent hydrogen from orbit (Cabeus),0.54,,,% by mass,NASA LEND science nugget 2017 (Sanin et al. 2017),Spread over the top ~1 m and a ~5 km pixel; real pockets can be richer
+ice_range,ice,Ice content used for yield ranges,5.6,0.5,8.5,% by mass,Derived from ice_lcross and ice_lend_cabeus,Low = orbital average; central and high = LCROSS
+ice_stable_tmax,ice,Max surface temperature for long-term stable ice,110,,,K,Paige et al. 2010 Science 330:479 (Diviner),Below ~110 K water ice loses less than ~1 kg/m2 per billion years
+ice_depth_cap,ice,Deepest ice depth reported in the Diviner table,2.87,,,m,Diviner PRP label (LRO-L-DLRE-5-PRP-V2.0),Deeper than 2.87 m is reported as -999 (no stable ice within reach)
+psr_min_area,ice,Smallest shadowed area counted as a target,1,,,km2,PGDA LPSR_80S_20MPP_ADJ_1km2 list,Smaller shadows exist (full list ~507k) but are too small to be resource targets
+o2_fraction_water,yield,Oxygen share of water by mass,0.889,,,fraction,Chemistry (16/18),Splitting 1 kg of water gives 0.889 kg O2 and 0.111 kg H2
+extraction_efficiency,yield,Share of the ice actually recovered,0.5,0.25,0.9,fraction,Our assumption,No flight-proven extraction method yet; the range is wide on purpose
+regolith_density,regolith,Regolith bulk density,1.66,1.50,1.74,g/cm3,Lunar Sourcebook ch. 9 (Carrier et al. 1991),Loose top 15 cm ~1.50; 30-60 cm ~1.74; 0-60 cm average ~1.66
+shield_thickness,regolith,Regolith cover over a habitat,1.0,0.5,3.0,m,Our assumption,Needs a source. Thin cover blocks solar storms; galactic cosmic rays need much more
+dose_surface,radiation,Radiation dose on the surface (measured),1.369,,,mSv/day,Zhang et al. 2020 Science Advances 6:eaaz1334 (Chang'e 4 LND),Measured early 2019 near solar minimum (high cosmic-ray time)
+dose_career_limit,radiation,NASA career radiation limit,600,,,mSv,NASA-STD-3001 Vol. 1 Rev. B (2022),Same for all astronauts
+solar_cycle,radiation,Sunspot number forecast,see noaa_predicted_solar_cycle.json,,,sunspots,NOAA SWPC predicted solar cycle (downloaded),Monthly May 2026 to Dec 2030 with low/high bands
+slope_drive,mobility,Max slope for walking and driving,20,15,25,deg,NASA HLS Overview 2025 slide 24; Apollo LRV,"20 deg is NASA's EVA limit (Phase 6); the Apollo rover was rated for ~25 deg"
+eva_radius,mobility,Distance from the lander for moonwalks,2,,,km,NASA HLS Overview 2025 slide 21,Matches Phase 6's EVA check

@@ -1,0 +1,99 @@
+/* Chat: a slim "Ask" pill bottom-right that grows upward into a compact
+   panel when focused. Frosted like the app's other floating cards. */
+#chat {
+  /* Bottom-right corner, beside the time scrubber; lifted above it when the
+     window is too narrow for the two side by side (see the media query). */
+  position: fixed; right: 12px; bottom: 12px;
+  width: 300px; z-index: 150;   /* above the intro overlay (100), whose backdrop would wash it out */
+  font-family: var(--font-sans);
+  display: flex; flex-direction: column;
+  transition: width 0.2s ease;
+}
+#chat.open { width: min(400px, calc(100vw - 24px)); }
+
+.chat-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 6px 6px 14px; border-radius: 999px;
+  background: var(--bg-panel); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border: 1px solid var(--border-mid); box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease, border-radius 0.2s ease;
+}
+.chat-bar:focus-within { border-color: var(--border-bright); }
+#chat.open .chat-bar { border-radius: 0 0 14px 14px; border-top-color: var(--border); background: var(--bg-panel-solid); }
+.chat-spark { color: var(--text-dim); font-size: 12px; }
+.chat-bar:focus-within .chat-spark { color: var(--accent-bright); }
+.chat-bar input {
+  flex: 1; min-width: 0; background: none; border: 0; outline: 0;
+  color: var(--text); font: 13px var(--font-sans); padding: 4px 0;
+}
+.chat-bar input::placeholder { color: var(--text-dim); }
+.chat-kbd {
+  font: 10px var(--font-mono); color: var(--text-dim);
+  border: 1px solid var(--border-mid); border-radius: 5px; padding: 1px 5px;
+}
+#chat.open .chat-kbd { display: none; }
+.chat-send {
+  width: 28px; height: 28px; flex: none; border-radius: 50%; border: 0;
+  background: var(--text); color: #000; font-size: 14px; font-weight: 700; cursor: pointer;
+  display: grid; place-items: center; transition: opacity 0.15s ease;
+}
+.chat-send:disabled { opacity: 0.35; cursor: default; }
+
+.chat-panel {
+  display: flex; flex-direction: column; max-height: min(50vh, 460px);
+  background: var(--bg-panel-solid); border: 1px solid var(--border-mid); border-bottom: 0;
+  border-radius: 14px 14px 0 0; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45); overflow: hidden;
+  animation: chat-in 0.16s ease-out;
+}
+.chat-panel[hidden] { display: none; }
+@keyframes chat-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.chat-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; font-size: 12px; color: var(--text-mid); border-bottom: 1px solid var(--border);
+}
+.chat-close { background: none; border: 0; color: var(--text-dim); font-size: 17px; cursor: pointer; line-height: 1; }
+.chat-close:hover { color: var(--text); }
+
+.chat-log {
+  flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+  font-size: 13px; line-height: 1.55; color: var(--text);
+}
+.chat-intro { color: var(--text-mid); font-size: 12px; }
+.chat-examples { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-examples button {
+  text-align: left; background: none; color: var(--text-mid);
+  border: 1px solid var(--border-mid); border-radius: 999px;
+  padding: 5px 11px; font: 11.5px var(--font-sans); cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.chat-examples button:hover { border-color: var(--accent); color: var(--text); }
+
+.chat-msg { overflow-wrap: anywhere; }
+/* Your questions in a bubble; answers as plain text, like a chat assistant. */
+.chat-msg.user {
+  align-self: flex-end; max-width: 85%;
+  background: var(--bg-raised); padding: 7px 12px; border-radius: 14px 14px 4px 14px;
+}
+.chat-msg.bot { align-self: stretch; }
+.chat-msg.bot b { font-family: var(--font-mono); font-weight: 600; font-size: 12.5px; }
+.chat-msg.pending {
+  background: linear-gradient(90deg, var(--text-dim) 0%, var(--text) 50%, var(--text-dim) 100%);
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: chat-shimmer 1.6s linear infinite;
+}
+@keyframes chat-shimmer { to { background-position: -200% 0; } }
+.chat-msg.error { color: #ff8a80; }
+/* One muted line per tool the model used. */
+.chat-tool { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); margin-bottom: -4px; }
+.chat-tool::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--green); flex: none; }
+/* Region names in answers: click to fly there. */
+.chat-chip {
+  display: inline; padding: 0 7px; margin: 0 1px; border: 0; border-radius: 999px;
+  background: var(--accent-dim); color: var(--accent-bright);
+  font: inherit; font-size: 12px; line-height: 1.6; cursor: pointer;
+}
+.chat-chip:hover { background: rgba(10, 132, 255, 0.3); color: var(--text); }
+
+@media (max-width: 1320px) {
+  #chat { bottom: calc(var(--panel-bottom, 80px) + 8px); }
+}

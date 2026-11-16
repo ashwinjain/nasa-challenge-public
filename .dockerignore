@@ -1,0 +1,13 @@
+*
+!pyproject.toml
+!lunarsky/
+!data/phase-1/de421.bsp
+!data/phase-1/moon_pa_de421_1900-2050.bpc
+!data/phase-1/moon_080317.tf
+!data/phase-1/pck00008.tpc
+!data/phase-3/sites.csv
+!data/phase-4/assumptions.csv
+**/__pycache__
+!data/phase-2/LDEM_80S_80MPP_ADJ.TIF
+!data/phase-2/LDEM_60S_240MPP_ADJ.TIF
+!Dockerfile.cloudflare

@@ -1,0 +1,52 @@
+# The Python API (lunarsky/api.py) as a Cloudflare Container, for custom
+# points and dates the static data doesn't cover. This Worker starts the
+# container and forwards /api/* to it; the Pages app reaches it through a
+# service binding (frontend/wrangler.toml). It also serves the 20 m LOLA map
+# from R2 (range reads) to the container, behind a shared key.
+# Deploy: npm install && npx wrangler deploy   (from api-worker/)
+name = "lunar-navigator-api"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+preview_urls = false
+
+[[containers]]
+class_name = "ApiContainer"
+image = "../Dockerfile.cloudflare"
+image_build_context = ".."
+# One instance answers the page; the panel-search jobs use their own,
+# jobs-0 … jobs-7 (src/jobs.js), at most 2 jobs at a time. They sleep 30 min
+# after their last request like the main one.
+max_instances = 10
+instance_type = "standard-3"   # 2 vCPU, 8 GiB: the elevation maps, and a slice of the panel search
+
+[[durable_objects.bindings]]
+name = "API_CONTAINER"
+class_name = "ApiContainer"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ApiContainer"]
+
+[[r2_buckets]]
+binding = "MAPS"
+bucket_name = "lunar-navigator-maps"
+
+
+# Panel-search jobs (src/jobs.js): saved slices, progress and answers.
+# Create once:  npx wrangler r2 bucket create lunar-navigator-jobs
+#               npx wrangler queues create lunar-navigator-jobs
+[[r2_buckets]]
+binding = "JOBS"
+bucket_name = "lunar-navigator-jobs"
+
+[[queues.producers]]
+binding = "JOB_QUEUE"
+queue = "lunar-navigator-jobs"
+
+[[queues.consumers]]
+queue = "lunar-navigator-jobs"
+max_batch_size = 1        # one job per invocation: its slices already run side by side
+max_batch_timeout = 1
+max_concurrency = 2       # two searches at once, sharing the 8 job containers
+max_retries = 3           # MAX_ATTEMPTS = 4 in src/jobs.js

@@ -1,0 +1,30 @@
+# The same API as Dockerfile (Cloud Run), for Cloudflare Containers
+# (api-worker/). The 80 m and 240 m maps ship in the image (loaded whole, so
+# local disk is fastest); the 20 m map (2.7 GB, read in windows) is read from
+# R2 through the API Worker: LUNAR_DATA_BASE_URL and LUNAR_DATA_HEADERS are
+# set by api-worker/src/index.js.
+FROM python:3.12-slim
+
+# Layers from the one that changes least to the one that changes most, so a
+# code change re-uploads only the small last layers: the maps and libraries
+# (hundreds of MB) stay cached in the registry.
+WORKDIR /app
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends libexpat1 \
+ && rm -rf /var/lib/apt/lists/*
+COPY data/phase-2/LDEM_80S_80MPP_ADJ.TIF data/phase-2/LDEM_60S_240MPP_ADJ.TIF data/phase-2/
+COPY data/phase-1/de421.bsp data/phase-1/moon_pa_de421_1900-2050.bpc data/phase-1/moon_080317.tf data/phase-1/pck00008.tpc data/phase-1/
+# The libraries alone (from pyproject.toml), then the package without them.
+COPY pyproject.toml ./
+RUN python -c "import tomllib; p = tomllib.load(open('pyproject.toml', 'rb'))['project']; \
+print('\\n'.join(p['dependencies'] + p['optional-dependencies']['maps']))" > /tmp/requirements.txt \
+ && pip install --no-cache-dir -r /tmp/requirements.txt \
+ && python -c "import rasterio; print('rasterio', rasterio.__version__, 'GDAL', rasterio.__gdal_version__)"
+COPY data/phase-3/sites.csv data/phase-3/
+COPY data/phase-4/assumptions.csv data/phase-4/
+COPY lunarsky/ lunarsky/
+RUN pip install --no-cache-dir --no-deps .
+ENV LUNAR_DATA_DIR=/app/data
+
+ENV PORT=8080
+CMD exec uvicorn lunarsky.api:app --host 0.0.0.0 --port $PORT

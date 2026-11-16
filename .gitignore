@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+*.egg
+
+# Ephemeris data (large binary, downloaded at setup)
+data/*.bsp
+
+# Phase 2 terrain maps: too large for GitHub (100 MB limit).
+# Re-download with the command in data/phase-2/README.md.
+data/phase-2/*.TIF
+data/phase-2/*.tif
+
+# Phase 3 sunlight map: re-download with the command in data/phase-3/README.md.
+data/phase-3/*.TIF
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.pytest_cache/
+
+# Claude Code worktrees (other sessions)
+.claude/worktrees/
+
+# Firebase CLI cache
+.firebase/
+
+# Phase 6 20 m elevation map (2.7 GB): too large for GitHub.
+data/phase-6/*.TIF
+data/phase-6/crop/
+
+# Phase 7 large files: stored in Firebase Storage; see data/phase-7/README.md.
+data/phase-7/*.TIF
+data/phase-7/LPSR_*.CSV
+data/phase-7/dlre_prp_south.tab
+data/phase-7/*.npz
+
+# Local planning / scratch docs (never pushed)
+major_refactor.md
+.wrangler/
+
+# Landing-target meshes #2-#10 live in R2 (scripts/upload_terrain_r2.sh)
+frontend/public/data/terrain/land-*-*.bin
+# ... and so does their imagery (each region's #1 is in git)
+frontend/public/data/terrain/land-*-*_albedo.bin
+frontend/public/data/terrain/land-*-*_wac.jpg

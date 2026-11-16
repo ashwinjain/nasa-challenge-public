@@ -1,0 +1,8 @@
+regolith_moon_color.jpg / regolith_moon_normal.jpg
+  Derived from NASA Apollo 11 photograph AS11-40-5878 (public domain):
+  undisturbed-regolith crop, reseau crosses and large shadows inpainted,
+  lighting flattened, normal map derived from luminance. Tiled with
+  MirroredRepeat in frontend/src/terrainMaterial.js (micro detail layer only;
+  hue is discarded in the shader).
+Per-site macro brightness comes from the NASA LROC WAC South Pole Summer
+Mosaic instead (see scripts/precompute_albedo.py and data/phase-2/README.md).

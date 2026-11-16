@@ -1,0 +1,10 @@
+id,name,psr_id,psr_area_km2,dist_km,diviner_cells,tmax_median_K,share_tmax_below_110K,share_ice_at_surface,share_ice_within_2_87m,ice_depth_median_m,route_max_grade_deg,route_share_over_20deg,route_drop_m
+artemis-hw,Haworth,HNP_860121_3378628,3.6,9.41,29,72.8,0.72,0.76,1.0,0.0,23.9,0.09,-1193
+artemis-ma,Malapert Massif,HNP_863976_0012809,1.4,10.21,11,158.9,0.27,0.27,1.0,0.01,26.6,0.11,-2441
+artemis-mm,Mons Mouton,HNP_872561_0337985,6.3,6.04,48,79.8,0.65,0.67,1.0,0.0,18.3,0.0,-839
+artemis-mp,Mons Mouton Plateau,HNP_872561_0337985,6.3,11.95,48,79.8,0.65,0.67,1.0,0.0,21.7,0.01,-633
+artemis-n1,Nobile Rim 1,HNP_871031_0362036,1.0,5.0,7,179.7,0.29,0.29,1.0,0.01,24.5,0.15,-1091
+artemis-n2,Nobile Rim 2,HNP_878794_0571733,3.6,6.63,29,235.4,0.28,0.28,1.0,0.01,20.9,0.04,-522
+artemis-cb,Peak Near Cabeus B,HNP_880723_2895667,2.2,13.46,16,221.1,0.0,0.0,0.81,0.24,34.3,0.49,-4376
+artemis-sp,Slater Plain,HNP_848637_1188908,60.6,9.73,471,76.7,1.0,1.0,1.0,0.0,22.2,0.1,-1292
+artemis-g2,de Gerlache Rim 2,HNP_809818_3012983,3.5,6.68,29,141.0,0.45,0.45,1.0,0.01,28.7,0.27,-1493

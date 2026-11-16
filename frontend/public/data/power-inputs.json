@@ -1,0 +1,197 @@
+{
+ "assumptions": {
+  "o2_per_crew": 0.84,
+  "water_drink_per_crew": 2.5,
+  "food_per_crew": 1.83,
+  "water_recovery": 0.0,
+  "solar_constant": 1361.0,
+  "cell_efficiency": 0.28,
+  "array_packing": 0.85,
+  "array_specific_mass": 0.0133,
+  "battery_specific_energy": 150.0,
+  "battery_dod": 0.8,
+  "storage_round_trip": 0.9,
+  "crew_base": 4.0,
+  "stay_long": 365.0,
+  "power_margin": 0.25,
+  "data_per_day": 600.0,
+  "downlink_rate": 110.0,
+  "supplies_margin": 0.25,
+  "li_crew_systems": 1500.0,
+  "li_crew_avionics": 1500.0,
+  "li_crew_radio": 300.0,
+  "li_crew_lab": 1000.0,
+  "li_crew_other": 1200.0,
+  "li_extra_rover": 450.0,
+  "li_extra_crewed_rover": 1400.0,
+  "li_extra_drill": 100.0,
+  "li_extra_lights": 200.0,
+  "li_extra_custom": 100.0
+ },
+ "mission": {
+  "id": "crew",
+  "label": "Crewed mission",
+  "load_w": 10000.0,
+  "always_w": 8700.0,
+  "day_w": 1000.0,
+  "contact_w": 300.0,
+  "days": 365.0,
+  "crew": 4
+ },
+ "inputs": {
+  "water_recovery": {
+   "value": 0.0,
+   "low": 0.0,
+   "high": 0.9,
+   "units": "fraction",
+   "source": "ISS ECLSS reported ~0.93 (NASA 2023)"
+  },
+  "loads": [
+   {
+    "id": "li_crew_systems",
+    "name": "Crew systems, per person",
+    "w": 1500.0,
+    "low": null,
+    "high": null,
+    "when": "always",
+    "source": "NASA TM-105925 (1993) First Lunar Outpost power, p.6 and Table 2: crew of 4, 45-day stay; habitat needs 10 kWe by day and 9 kWe at night; allocation: crew systems 6.0 kWe",
+    "notes": "6.0 kWe for 4 crew, so 1.5 kW per person, scaled by crew size. The memo does not itemise crew systems further. Fixed. Runs always",
+    "estimate": false,
+    "editable": false,
+    "per_crew": true
+   },
+   {
+    "id": "li_crew_avionics",
+    "name": "Avionics and communications (without the Earth transmitter)",
+    "w": 1500.0,
+    "low": null,
+    "high": null,
+    "when": "always",
+    "source": "NASA TM-105925 (1993) First Lunar Outpost power, p.6 and Table 2: crew of 4, 45-day stay; habitat needs 10 kWe by day and 9 kWe at night; allocation: avionics 1.8 kWe",
+    "notes": "The memo's 1.8 kWe avionics and communications allocation minus our 300 W Earth transmitter (li_crew_radio), so at a site in constant contact the two add back to the memo's 1.8 kWe. Receiving and short-range radios stay in here. Fixed. Runs always",
+    "estimate": false,
+    "editable": false,
+    "per_crew": false
+   },
+   {
+    "id": "li_crew_radio",
+    "name": "Radio transmitting to Earth",
+    "w": 300.0,
+    "low": 100.0,
+    "high": 300.0,
+    "when": "contact",
+    "source": "Our estimate. RF transmit power 10-100 W in NASA's Earth-to-lunar-surface link trades (Booth & Marsden, NASA/TM-2019-220203, 2019, which varied surface transmit power at 10, 50 and 100 W)",
+    "notes": "DC draw taken as ~3x the 100 W RF output (an amplifier about a third efficient); low = 100 W (30 W RF at the same efficiency). Runs only while Earth is in direct contact: above the 10 m antenna's skyline and a DSN station can see the Moon. Editable",
+    "estimate": true,
+    "editable": true,
+    "per_crew": false
+   },
+   {
+    "id": "li_crew_other",
+    "name": "Other habitat systems",
+    "w": 1200.0,
+    "low": null,
+    "high": null,
+    "when": "always",
+    "source": "NASA TM-105925 (1993) First Lunar Outpost power, p.6 and Table 2: crew of 4, 45-day stay; habitat needs 10 kWe by day and 9 kWe at night",
+    "notes": "The memo's 10 kWe daytime total minus its three listed allocations (6.0 + 1.8 + 1.0 = 8.8 kWe). Includes thermal control and health monitoring. Fixed. Runs always",
+    "estimate": false,
+    "editable": false,
+    "per_crew": false
+   },
+   {
+    "id": "li_crew_lab",
+    "name": "Science lab",
+    "w": 1000.0,
+    "low": null,
+    "high": null,
+    "when": "day",
+    "source": "NASA TM-105925 (1993) First Lunar Outpost power, p.6 and Table 2: crew of 4, 45-day stay; habitat needs 10 kWe by day and 9 kWe at night; allocation: laboratory science experiments 1.0 kWe",
+    "notes": "Fixed. Daylight only, which is why the memo has 10 kWe by day and 9 kWe at night",
+    "estimate": false,
+    "editable": false,
+    "per_crew": false
+   }
+  ],
+  "extra_loads": [
+   {
+    "id": "li_extra_rover",
+    "name": "Small rover charging",
+    "w": 450.0,
+    "low": null,
+    "high": null,
+    "when": "day",
+    "source": "NASA VIPER rover: 450 W peak solar power (NTRS 20230011558, VIPER mission overview)",
+    "notes": "Rover peak power, used as its charging draw. Fixed. Daylight only",
+    "estimate": false,
+    "editable": false,
+    "per_crew": false
+   },
+   {
+    "id": "li_extra_crewed_rover",
+    "name": "Crewed rover charging",
+    "w": 1400.0,
+    "low": null,
+    "high": null,
+    "when": "always",
+    "source": "NASA TM-105925 (1993) Table 2: crewed rover recharge 1.4 kWe day and night, 14 h per recharge",
+    "notes": "Fixed. Runs always",
+    "estimate": false,
+    "editable": false,
+    "per_crew": false
+   },
+   {
+    "id": "li_extra_drill",
+    "name": "Drill",
+    "w": 100.0,
+    "low": 30.0,
+    "high": 195.0,
+    "when": "day",
+    "source": "NASA NSSDCA, TRIDENT drill (PRIME-1): 30 W idle, 100 W augering, 195 W percussive",
+    "notes": "Add-on. Daylight only by default",
+    "estimate": false,
+    "editable": false,
+    "per_crew": false
+   },
+   {
+    "id": "li_extra_lights",
+    "name": "Work lights",
+    "w": 200.0,
+    "low": 50.0,
+    "high": 500.0,
+    "when": "always",
+    "source": "Our estimate: a few LED floodlights for working in shadow",
+    "notes": "ESTIMATE. Add-on. Runs always by default",
+    "estimate": true,
+    "editable": true,
+    "per_crew": false
+   },
+   {
+    "id": "li_extra_custom",
+    "name": "Custom load",
+    "w": 100.0,
+    "low": null,
+    "high": null,
+    "when": "always",
+    "source": "Your own value",
+    "notes": "Add-on. Name and watts are yours",
+    "estimate": false,
+    "editable": true,
+    "per_crew": false
+   }
+  ],
+  "crew": {
+   "value": 4.0,
+   "low": 2.0,
+   "high": 6.0,
+   "units": "people",
+   "source": "Csank et al. 2023 (NTRS 20230002896)"
+  },
+  "rates": {
+   "o2_per_crew": 0.84,
+   "water_drink_per_crew": 2.5,
+   "food_per_crew": 1.83,
+   "supplies_margin": 0.25
+  }
+ }
+}

@@ -1,0 +1,283 @@
+{
+ "note": "The kit mass is the solar array plus the battery only. Air, water, food, habitat, lander, mast and cable mass are not counted. Default load for a crew of 4: crew systems 6.0 kW (1.5 kW each), avionics and communications 1.5 kW, radio to Earth 0.3 kW (only in direct contact), other habitat systems 1.2 kW, science lab 1.0 kW (daylight only): 10 kW in all. Power comes from solar panels and batteries only; nuclear power and fuel cells are not modelled.",
+ "groups": [
+  {
+   "topic": "loads",
+   "title": "Power load list (crew of 4: about 10 kW by day, 9 kW at night)",
+   "items": [
+    {
+     "name": "Crew systems, per person",
+     "value": 1500.0,
+     "units": "W per crew",
+     "source": "NASA TM-105925 (1993) First Lunar Outpost power, p.6 and Table 2: crew of 4, 45-day stay; habitat needs 10 kWe by day and 9 kWe at night; allocation: crew systems 6.0 kWe",
+     "runs": "always",
+     "kind": "default load"
+    },
+    {
+     "name": "Avionics and communications (without the Earth transmitter)",
+     "value": 1500.0,
+     "units": "W",
+     "source": "NASA TM-105925 (1993) First Lunar Outpost power, p.6 and Table 2: crew of 4, 45-day stay; habitat needs 10 kWe by day and 9 kWe at night; allocation: avionics 1.8 kWe",
+     "runs": "always",
+     "kind": "default load"
+    },
+    {
+     "name": "Radio transmitting to Earth",
+     "value": 300.0,
+     "units": "W",
+     "source": "Our estimate. RF transmit power 10-100 W in NASA's Earth-to-lunar-surface link trades (Booth & Marsden, NASA/TM-2019-220203, 2019, which varied surface transmit power at 10, 50 and 100 W)",
+     "range": [
+      100.0,
+      300.0
+     ],
+     "runs": "only while in direct contact with Earth",
+     "kind": "default load"
+    },
+    {
+     "name": "Science lab",
+     "value": 1000.0,
+     "units": "W",
+     "source": "NASA TM-105925 (1993) First Lunar Outpost power, p.6 and Table 2: crew of 4, 45-day stay; habitat needs 10 kWe by day and 9 kWe at night; allocation: laboratory science experiments 1.0 kWe",
+     "runs": "daylight only",
+     "kind": "default load"
+    },
+    {
+     "name": "Other habitat systems",
+     "value": 1200.0,
+     "units": "W",
+     "source": "NASA TM-105925 (1993) First Lunar Outpost power, p.6 and Table 2: crew of 4, 45-day stay; habitat needs 10 kWe by day and 9 kWe at night",
+     "runs": "always",
+     "kind": "default load"
+    },
+    {
+     "name": "Small rover charging",
+     "value": 450.0,
+     "units": "W",
+     "source": "NASA VIPER rover: 450 W peak solar power (NTRS 20230011558, VIPER mission overview)",
+     "runs": "daylight only",
+     "kind": "add-on (not in the default load)"
+    },
+    {
+     "name": "Crewed rover charging",
+     "value": 1400.0,
+     "units": "W",
+     "source": "NASA TM-105925 (1993) Table 2: crewed rover recharge 1.4 kWe day and night, 14 h per recharge",
+     "runs": "always",
+     "kind": "add-on (not in the default load)"
+    },
+    {
+     "name": "Drill",
+     "value": 100.0,
+     "units": "W",
+     "source": "NASA NSSDCA, TRIDENT drill (PRIME-1): 30 W idle, 100 W augering, 195 W percussive",
+     "range": [
+      30.0,
+      195.0
+     ],
+     "runs": "daylight only",
+     "kind": "add-on (not in the default load)"
+    },
+    {
+     "name": "Work lights",
+     "value": 200.0,
+     "units": "W",
+     "source": "Our estimate: a few LED floodlights for working in shadow",
+     "range": [
+      50.0,
+      500.0
+     ],
+     "runs": "always",
+     "kind": "add-on (not in the default load)"
+    }
+   ]
+  },
+  {
+   "topic": "solar",
+   "title": "Solar array",
+   "items": [
+    {
+     "name": "Sunlight power at the Moon",
+     "value": 1361.0,
+     "units": "W/m2",
+     "source": "Kopp & Lean 2011 (total solar irradiance)",
+     "range": [
+      1317.0,
+      1414.0
+     ]
+    },
+    {
+     "name": "Solar cell efficiency (end of life)",
+     "value": 0.28,
+     "units": "fraction",
+     "source": "Triple-junction GaAs space cells (vendor datasheets)",
+     "range": [
+      0.22,
+      0.32
+     ]
+    },
+    {
+     "name": "Share of array area that is cells",
+     "value": 0.85,
+     "units": "fraction",
+     "source": "Typical space array design",
+     "range": [
+      0.75,
+      0.9
+     ]
+    },
+    {
+     "name": "Array mass per watt (vertical deployable)",
+     "value": 0.0133,
+     "units": "kg/W",
+     "source": "NASA VSAT key performance parameters (Taylor/Pappa/McNatt, LSIC May 2021): 75 W/kg (5-yr) to 100 W/kg (10-yr), under 150 kg for 10 kW",
+     "range": [
+      0.01,
+      0.0625
+     ]
+    }
+   ]
+  },
+  {
+   "topic": "battery",
+   "title": "Battery",
+   "items": [
+    {
+     "name": "Battery energy per kg (pack level)",
+     "value": 150.0,
+     "units": "Wh/kg",
+     "source": "Li-ion space battery packs (NASA/industry)",
+     "range": [
+      100.0,
+      200.0
+     ]
+    },
+    {
+     "name": "Usable depth of discharge",
+     "value": 0.8,
+     "units": "fraction",
+     "source": "Li-ion practice for long cycle life",
+     "range": [
+      0.6,
+      0.9
+     ]
+    },
+    {
+     "name": "Charge-discharge efficiency",
+     "value": 0.9,
+     "units": "fraction",
+     "source": "Li-ion typical",
+     "range": [
+      0.85,
+      0.95
+     ]
+    }
+   ]
+  },
+  {
+   "topic": "margins",
+   "title": "Margins",
+   "items": [
+    {
+     "name": "Power margin over the load (concept stage)",
+     "value": 0.25,
+     "units": "fraction of capacity",
+     "source": "NASA GSFC-STD-1000 Rev G, Rule 1.06, Table 1.06-1",
+     "range": [
+      0.05,
+      0.25
+     ]
+    },
+    {
+     "name": "Margin on oxygen water and food",
+     "value": 0.25,
+     "units": "fraction of capacity",
+     "source": "Project choice, matching the GSFC Table 1.06-1 concept-stage resource margin",
+     "range": [
+      0.05,
+      0.25
+     ]
+    }
+   ]
+  },
+  {
+   "topic": "comms",
+   "title": "Data sent to Earth",
+   "items": [
+    {
+     "name": "Data the surface sends to Earth per day",
+     "value": 600.0,
+     "units": "Gb/day",
+     "source": "NASA NESC Academy, Artemis lunar surface communications (baseline): data volume 600 Gb/day at 110 Mbps"
+    },
+    {
+     "name": "Downlink rate to Earth while in direct contact",
+     "value": 110.0,
+     "units": "Mbps",
+     "source": "NASA NESC Academy, Artemis lunar surface communications (baseline): 110 Mbps"
+    }
+   ]
+  },
+  {
+   "topic": "crew_supplies",
+   "title": "What a person needs per day (reference only: not part of the kit mass)",
+   "items": [
+    {
+     "name": "Oxygen breathed per crew member",
+     "value": 0.84,
+     "units": "kg/crew-day",
+     "source": "NASA BVAD Rev2 (NASA/TP-2015-218570/REV2) Tables 3-23 and 3-27",
+     "range": [
+      0.61,
+      1.08
+     ]
+    },
+    {
+     "name": "Drinking water per crew member",
+     "value": 2.5,
+     "units": "kg/crew-day",
+     "source": "NASA-STD-3001 ECLSS technical brief (OCHMO-TB-002): 2.5 L/crew-day minimum potable water",
+     "range": [
+      2.5,
+      4.16
+     ]
+    },
+    {
+     "name": "Food per crew member including packaging",
+     "value": 1.83,
+     "units": "kg/crew-day",
+     "source": "ICES-2025-234 using NASA BVAD Rev2",
+     "range": [
+      1.5,
+      2.4
+     ]
+    }
+   ]
+  },
+  {
+   "topic": "mission",
+   "title": "Mission",
+   "items": [
+    {
+     "name": "Crew size",
+     "value": 4.0,
+     "units": "people",
+     "source": "Csank et al. 2023 (NTRS 20230002896)",
+     "range": [
+      2.0,
+      6.0
+     ]
+    },
+    {
+     "name": "Stay length: crewed mission (default)",
+     "value": 365.0,
+     "units": "days",
+     "source": "Project choice",
+     "range": [
+      1.0,
+      365.0
+     ]
+    }
+   ]
+  }
+ ]
+}

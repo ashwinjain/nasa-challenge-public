@@ -1,0 +1,22 @@
+# Files gcloud uploads for `gcloud run deploy --source .` (make deploy-api).
+# Upload only what the Dockerfile needs; the data maps are gigabytes.
+/*
+!/Dockerfile
+!/.dockerignore
+!/pyproject.toml
+!/lunarsky/
+!/data/
+/data/*
+!/data/phase-1/
+/data/phase-1/*
+!/data/phase-1/*.bsp
+!/data/phase-1/*.bpc
+!/data/phase-1/*.tf
+!/data/phase-1/*.tpc
+!/data/phase-3/
+/data/phase-3/*
+!/data/phase-3/sites.csv
+!/data/phase-4/
+/data/phase-4/*
+!/data/phase-4/assumptions.csv
+__pycache__/

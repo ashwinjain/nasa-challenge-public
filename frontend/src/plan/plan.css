@@ -1,0 +1,375 @@
+/* Plan & compare: a full-screen view over the main app's 3D scene
+   (#plan-overlay in index.html). Builds on style.css: same tokens, and the
+   same .seg-btn / .panel-header classes the main app uses. */
+
+#plan-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: auto;
+  /* Plan opens on top of the 3D view frozen exactly where you left it:
+     scene3d.setPaused stops the render loop and the canvas holds its last
+     frame, so this really is the Moon you were looking at (or the terrain you
+     were standing on). Only a light scrim and a touch of blur - enough to
+     keep text legible without hiding where you were. The panels carry their
+     own blur, so the reading surfaces stay solid over any backdrop. */
+  background: rgba(11, 11, 13, 0.45);
+  backdrop-filter: blur(5px) saturate(1.05);
+  -webkit-backdrop-filter: blur(5px) saturate(1.05);
+  color-scheme: dark;
+}
+#plan-overlay[hidden] { display: none; }
+
+/* The frozen scene is the backdrop, but the main view's own chrome is not:
+   without this the site list, scrubber and panels ghost through the overlay
+   underneath Plan's. #scene-container (the canvas) is deliberately left
+   showing. visibility rather than display so nothing reflows, and whatever
+   the 3D view had measured is still correct when you go back to it. */
+body:has(#plan-overlay:not([hidden])) #main-hud,
+body:has(#plan-overlay:not([hidden])) #intro-overlay { visibility: hidden; }
+/* main.js sets this one's visibility inline when the timeline first loads,
+   and an inline declaration beats the hidden it would otherwise inherit -
+   hence !important, which does outrank it. */
+body:has(#plan-overlay:not([hidden])) #time-scrubber-container { visibility: hidden !important; }
+
+/* The bar itself is style.css's .top-bar; here it just sticks and scrolls. */
+#plan-overlay #plan-top{ position: sticky; top: 0; left: 0; right: 0; z-index: 10; overflow-x: auto; }
+#plan-overlay .plan-back{ background: none; border: none; color: inherit; font: inherit; cursor: pointer; padding: 0; text-align: left; }
+#plan-overlay .plan-back:hover .brand-sub{ color: var(--cyan); }
+#plan-overlay #plan-inputs{ display: flex; align-items: center; gap: 0.45rem; }
+#plan-overlay .plan-input{
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--cyan);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.22rem 0.45rem;
+  outline: none;
+}
+#plan-overlay .plan-input:focus{ border-color: var(--cyan); }
+#plan-overlay .plan-input.invalid{ border-color: var(--amber); color: var(--amber); }
+#plan-overlay .num-input{ width: 4.2em; }
+
+#plan-overlay .plan-main{ padding: 14px; display: grid; gap: 14px; max-width: 1500px; margin: 0 auto; }
+#plan-overlay .plan-panel{
+  /* Denser than the main view's --bg-panel: a detailed scene sits behind
+     these now, and the tables have to stay readable over it. */
+  background: rgba(24, 24, 27, 0.74);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+#plan-overlay .plan-panel .panel-header{ cursor: default; flex-wrap: wrap; gap: 0.5rem; }
+#plan-overlay .plan-panel .panel-header-left{ gap: 0.8rem; }
+#plan-overlay .plan-body{ padding: 0.8rem; font-size: 0.75rem; }
+
+#plan-overlay #tray-flash{ font-size: 0.65rem; color: var(--amber); opacity: 0; transition: opacity 0.2s; margin-right: 0.5rem; }
+#plan-overlay #tray-flash.show{ opacity: 1; }
+#plan-overlay #tray-count{ color: var(--text-dim); }
+
+#plan-overlay .num{ font-family: var(--font-mono); text-align: right; white-space: nowrap; }
+
+/* ── Rank (pick a date) ── */
+#plan-overlay .rank-row{
+  display: grid;
+  grid-template-columns: 22px 26px minmax(120px, 200px) minmax(60px, 1fr) 70px 92px 76px 76px 76px 76px 84px;
+  gap: 10px;
+  align-items: center;
+  padding: 5px 4px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+#plan-overlay .rank-row:hover{ background: rgba(255, 255, 255, 0.035); }
+#plan-overlay .rank-row.selected .rank-name{ color: var(--cyan); }
+#plan-overlay .rank-name, #plan-overlay .tray-name{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#plan-overlay .rank-head{ cursor: default; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
+#plan-overlay .rank-head:hover{ background: none; }
+/* Metric column headers: click to sort. Labels may wrap to two lines. */
+#plan-overlay .rank-head .sort-btn{
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit;
+  background: none; border: 0; padding: 4px 6px; margin: -2px 0;
+  text-align: right; white-space: normal; line-height: 1.25; cursor: pointer;
+}
+#plan-overlay .rank-head .sort-btn:hover{ color: var(--text); background: var(--accent-dim); }
+#plan-overlay .rank-n{ font-family: var(--font-mono); color: var(--text-dim); }
+#plan-overlay .rank-track{ height: 11px; background: var(--bg-raised); position: relative; }
+#plan-overlay .rank-track span{ position: absolute; left: 0; top: 0; bottom: 0; }
+/* Expanded list scrolls inside the panel, so Compare stays on screen. */
+#plan-overlay .rank-rows.expanded{ max-height: 300px; overflow-y: auto; }
+#plan-overlay .rank-more{
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px;
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  color: var(--cyan);
+  background: none;
+  border: 1px dashed var(--border);
+  cursor: pointer;
+}
+#plan-overlay .rank-more:hover{ border-color: var(--cyan); background: rgba(56, 184, 208, 0.05); }
+
+#plan-overlay .unpin{
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 2px 4px;
+}
+#plan-overlay .unpin:hover{ border-color: var(--border-mid); color: var(--cyan); }
+/* Compare checkbox at the left of each rank row (ticked = pinned). */
+#plan-overlay .compare-cb{
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  justify-self: center;
+  border: 1px solid var(--border-mid);
+  background: var(--bg-panel-solid);
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+}
+#plan-overlay .compare-cb:hover{ border-color: var(--cyan); }
+#plan-overlay .compare-cb:checked{ background: var(--cyan); border-color: var(--cyan); }
+#plan-overlay .compare-cb:checked::after{
+  content: "";
+  width: 4px;
+  height: 8px;
+  margin-top: -2px;
+  border: solid var(--bg-deep);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+#plan-overlay .compare-cb:focus-visible{ outline: 1px solid var(--cyan); outline-offset: 2px; }
+
+/* ── When (pick a site) ── */
+#plan-overlay .when-layout{ display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 14px; align-items: start; }
+#plan-overlay .site-list{
+  position: relative;   /* rows' offsetTop is measured from the list */
+  display: flex;
+  flex-direction: column;
+  max-height: 250px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-mid) transparent;
+}
+/* One row per site: compare box, then the name (click to chart it). */
+#plan-overlay .site-row{
+  flex-shrink: 0;   /* don't squash rows to fit max-height; scroll instead */
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--border);
+}
+#plan-overlay .site-row:hover{ background: rgba(255, 255, 255, 0.035); }
+#plan-overlay .site-row.active{ border-left-color: var(--cyan); background: var(--cyan-dim); }
+#plan-overlay .site-pick{
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  color: var(--text-mid);
+  background: none;
+  border: none;
+  padding: 5px 6px 5px 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#plan-overlay .site-row:hover .site-pick{ color: var(--text); }
+#plan-overlay .site-row.active .site-pick{ color: var(--cyan); }
+#plan-overlay .when-wrap{ width: 100%; }
+#plan-overlay .when-chart{ display: block; }
+#plan-overlay .axis-label{ fill: var(--text-dim); font-size: 10px; }
+#plan-overlay .when-selected{ fill: none; stroke: #fff; stroke-width: 1.5; pointer-events: none; }
+
+/* ── Compare tray ── */
+#plan-overlay .tray-row{
+  display: grid;
+  grid-template-columns: minmax(150px, 210px) 1fr 70px 70px 70px 70px 70px 28px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--border);
+}
+#plan-overlay .tray-head{ font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); padding: 2px 4px; }
+#plan-overlay .tray-name{ font-size: 0.82rem; }
+#plan-overlay .tray-date{ font-size: 0.65rem; color: var(--amber); margin-top: 1px; }
+#plan-overlay .tray-bars{ display: grid; gap: 3px; }
+#plan-overlay .tray-track{ position: relative; height: 9px; background: var(--bg-raised); overflow: hidden; }
+#plan-overlay .tray-track i{ position: absolute; top: 0; bottom: 0; }
+#plan-overlay .tray-track b{ position: absolute; top: 0; bottom: 0; width: 1px; background: var(--bg-panel); }
+#plan-overlay .num.big{ font-size: 0.9rem; }
+#plan-overlay .tray-empty{ color: var(--text-dim); }
+#plan-overlay .tray-legend{ display: flex; align-items: center; gap: 4px; font-size: 0.55rem; letter-spacing: 0.06em; text-transform: none; }
+#plan-overlay .tray-legend i{ display: inline-block; width: 10px; height: 7px; margin-left: 6px; }
+#plan-overlay .tray-legend i.none{ background: var(--bg-raised); outline: 1px solid var(--border-mid); }
+
+/* Contact at touchdown (shared/colors.js EARTH, RELAY) */
+#plan-overlay .touchdown{ font-size: 0.72rem; white-space: nowrap; cursor: help; }
+#plan-overlay .touchdown.td-direct{ color: var(--cyan); }
+#plan-overlay .touchdown.td-relay{ color: var(--night); }
+#plan-overlay .touchdown.td-none{ color: var(--red); }
+
+#plan-overlay #plan-tooltip{
+  position: fixed;
+  display: none;
+  z-index: 50;
+  pointer-events: none;
+  background: var(--bg-panel-solid);
+  border: 1px solid var(--border-mid);
+  padding: 5px 8px;
+  font-size: 0.68rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+#plan-overlay #plan-tooltip b{ font-weight: 500; color: var(--cyan); }
+
+/* The column the ranking is sorted by. */
+#plan-overlay .rank-row .num.sorted{ background: var(--accent-dim); margin: -5px 0; padding: 5px 6px; font-weight: 500; }
+#plan-overlay .rank-head .num.sorted{ color: var(--cyan); background: rgba(56, 184, 208, 0.12); margin: -2px 0; padding: 4px 6px; }
+#plan-overlay .axis-title{ fill: var(--text-dim); font-size: 10px; letter-spacing: 0.04em; }
+#plan-overlay .best-box{ pointer-events: none; }
+#plan-overlay .best-date{ font-size: 10px; font-weight: 600; }
+#plan-overlay .best-rank{ font-size: 10px; font-weight: 700; pointer-events: none; }
+#plan-overlay .year-input{ width: 5.2em; }
+
+/* ── Power & landing (Phase 4) ── */
+#plan-overlay .pw-head{ display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.7rem; }
+#plan-overlay .pw-where{ color: var(--text-mid); }
+#plan-overlay .pw-where b{ color: var(--text); font-weight: 500; }
+#plan-overlay .pw-msg{ color: var(--text-dim); padding: 0.6rem 0; }
+/* Customize: profile inputs you can change */
+#plan-overlay .pw-custom{ border: 1px solid var(--border); padding: 0.35rem 0.6rem; margin-bottom: 0.7rem; }
+#plan-overlay .pw-custom summary{ cursor: pointer; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-mid); }
+#plan-overlay .pw-custom[open] summary{ margin-bottom: 0.5rem; }
+#plan-overlay .pw-fields{ display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.6rem 1rem; }
+#plan-overlay .pw-field{ min-width: 0; }
+#plan-overlay .pw-flabel{ display: block; font-size: 0.62rem; color: var(--text-mid); margin-bottom: 2px; }
+#plan-overlay .pw-unit{ color: var(--text-dim); }
+#plan-overlay .pw-field.changed .pw-flabel{ color: var(--amber); }
+#plan-overlay .pw-field.changed .num-input{ border-color: var(--amber); }
+#plan-overlay .pw-frow{ display: flex; align-items: center; gap: 0.4rem; }
+#plan-overlay .pw-frow input[type="range"]{ flex: 1; min-width: 0; accent-color: var(--cyan); }
+#plan-overlay .pw-frow .num-input{ width: 4.6em; }
+#plan-overlay .pw-fnote{ font-size: 0.58rem; color: var(--text-dim); margin-top: 2px; cursor: help; }
+#plan-overlay .pw-fnote.out{ color: var(--amber); }
+#plan-overlay .pw-customfoot{ display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.55rem; font-size: 0.62rem; color: var(--text-dim); }
+#plan-overlay .pw-customfoot b{ color: var(--text-mid); font-weight: 500; }
+#plan-overlay .pw-reset{ background: none; border: 1px solid var(--border); color: var(--text-mid); font: inherit; padding: 1px 8px; cursor: pointer; }
+#plan-overlay .pw-reset:hover{ color: var(--amber); border-color: var(--amber); }
+/* Tiles are style.css's .metrics-grid / .metric; only the column count differs. */
+#plan-overlay .pw-tiles{ grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); margin: 0 0 0.6rem; }
+#plan-overlay .pw-foot{ margin-top: 0.6rem; font-size: 0.62rem; color: var(--text-dim); }
+
+/* "Pick a site → when?": note shown when the metric is flat all year */
+#plan-overlay .flat-note rect{ fill: #0a0c14; fill-opacity: 0.88; stroke: var(--border-mid); }
+#plan-overlay .flat-note .flat-title{ fill: var(--text); font-size: 12px; }
+#plan-overlay .flat-note .flat-sub{ fill: var(--text-dim); font-size: 10.5px; font-family: var(--font-mono); }
+#plan-overlay .flat-note{ pointer-events: none; }
+#plan-overlay .blackout-note{ fill: var(--cyan); }
+#plan-overlay .when-chart .next-year{ font-size: 11px; font-weight: 600; pointer-events: none; }
+
+#plan-overlay .verdict{ font-size: 0.78rem; white-space: nowrap; cursor: help; }
+#plan-overlay .verdict.pass{ color: var(--green); }
+#plan-overlay .verdict.kit{ color: var(--text); cursor: help; }
+#plan-overlay .verdict.fail{ color: var(--red); }
+#plan-overlay .verdict.wait{ color: var(--text-dim); }
+
+/* Load list (Customize): name · watts · when it runs · remove */
+#plan-overlay .pw-loads{ margin-bottom: 0.7rem; font-size: 0.68rem; }
+#plan-overlay .pw-loads-head,
+#plan-overlay .pw-load{ display: grid; grid-template-columns: minmax(0, 1fr) 9.5em 7em 1.6em; gap: 0.4rem; align-items: center; }
+#plan-overlay .pw-loads-head{ font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.25rem; }
+#plan-overlay .pw-load{ padding: 2px 0; }
+#plan-overlay .pw-load-name{ min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-mid); cursor: help; }
+#plan-overlay input.pw-load-name{ cursor: text; width: 100%; }
+#plan-overlay .pw-load .num-input{ width: 100%; }
+#plan-overlay .pw-load.changed .pw-load-name{ color: var(--amber); }
+#plan-overlay .pw-load.changed .num-input{ border-color: var(--amber); }
+#plan-overlay .pw-load-x{ background: none; border: none; color: var(--text-dim); cursor: pointer; font: inherit; padding: 0; }
+#plan-overlay .pw-load-x:hover{ color: var(--amber); }
+#plan-overlay .pw-loads-foot{ display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; margin-top: 0.35rem; }
+#plan-overlay .pw-load-total{ color: var(--text-dim); }
+#plan-overlay .pw-load-total b{ color: var(--text-mid); font-weight: 500; }
+@media (max-width: 480px){
+  #plan-overlay .pw-loads-head,
+  #plan-overlay .pw-load{ grid-template-columns: minmax(0, 1fr) 8em 4.8em 1.4em; }
+}
+#plan-overlay .pw-load-fixed{ color: var(--text-mid); white-space: nowrap; cursor: help; font-variant-numeric: tabular-nums; }
+#plan-overlay .pw-load-fixed b{ color: var(--text); font-weight: 500; }
+#plan-overlay .pw-load-when{ color: var(--text-dim); }
+#plan-overlay .pw-star{ color: var(--amber); margin-left: 2px; }
+#plan-overlay .pw-footnote{ font-size: 0.6rem; color: var(--text-dim); margin-top: 0.4rem; line-height: 1.5; }
+
+/* ── Date range calendar (rangePicker.js) ──
+   The popover lives on <body> (so the top bar's overflow can't clip it),
+   hence not scoped to #plan-overlay. */
+#plan-overlay .range-field{ cursor: pointer; white-space: nowrap; text-align: left; }
+#plan-overlay .range-field::after{ content: " ▾"; color: var(--text-dim); }
+#plan-overlay .range-field.open{ border-color: var(--cyan); }
+.range-pop{
+  position: fixed; z-index: 400;
+  background: var(--bg-panel-solid); border: 1px solid var(--border-bright);
+  box-shadow: var(--shadow);
+  padding: 10px 12px 8px; font-family: var(--font-mono); color: var(--text);
+}
+.range-nav{ position: relative; height: 0; }
+.range-step{
+  position: absolute; top: -2px; width: 22px; height: 22px;
+  background: none; border: 1px solid var(--border); color: var(--text-mid); cursor: pointer; font: inherit;
+}
+.range-step[data-step="-1"]{ left: 0; }
+.range-step[data-step="1"]{ right: 0; }
+.range-step:hover:not(:disabled){ color: var(--cyan); border-color: var(--cyan); }
+.range-step:disabled{ opacity: 0.3; cursor: default; }
+.range-months{ display: flex; gap: 18px; }
+.range-title{ text-align: center; font-size: 0.68rem; letter-spacing: 0.08em; color: var(--text-mid); height: 22px; line-height: 20px; margin-bottom: 4px; }
+.range-grid{ display: grid; grid-template-columns: repeat(7, 28px); row-gap: 2px; }
+.range-grid i{ font-style: normal; text-align: center; font-size: 0.52rem; letter-spacing: 0.08em; color: var(--text-dim); padding-bottom: 3px; }
+.range-grid .day{
+  height: 26px; background: none; border: none; color: var(--text); font: inherit; font-size: 0.68rem; cursor: pointer;
+}
+.range-grid .day:hover:not(.off){ outline: 1px solid var(--cyan); outline-offset: -1px; }
+.range-grid .day.in{ background: var(--cyan-dim); }
+.range-grid .day.start, .range-grid .day.end{ background: var(--cyan); color: var(--bg-deep); font-weight: 600; }
+.range-grid .day.off{ color: var(--text-dim); opacity: 0.45; cursor: default; }
+.range-hint{ margin-top: 8px; font-size: 0.6rem; color: var(--text-mid); border-top: 1px solid var(--border); padding-top: 6px; }
+@media (max-width: 520px){ .range-months > :last-child{ display: none; } }
+
+/* ── Where to land? (Phase 6) ── */
+#plan-overlay .land-layout{ display: grid; grid-template-columns: 190px auto minmax(0, 1fr); gap: 14px; align-items: start; }
+#plan-overlay .land-regions{ max-height: 460px; }
+#plan-overlay .land-regions .site-pick{ display: flex; justify-content: space-between; gap: 8px; width: 100%; }
+#plan-overlay .land-best{ font-family: var(--font-mono); color: var(--text-dim); }
+#plan-overlay .land-maps{ display: flex; flex-direction: column; gap: 8px; }
+#plan-overlay .land-map, #plan-overlay .land-zone{ display: block; background: rgba(10, 14, 24, 0.6); border: 1px solid var(--border); }
+#plan-overlay .land-row{ grid-template-columns: 26px repeat(6, minmax(0, 1fr)); gap: 8px; }
+#plan-overlay .land-row.selected{ background: var(--cyan-dim); }
+#plan-overlay .land-dim{ color: var(--text-dim); }
+#plan-overlay .land-detail{ margin-top: 12px; padding: 10px 12px; border: 1px solid var(--border); background: rgba(10, 14, 24, 0.5); }
+#plan-overlay .land-title{ font-size: 0.85rem; margin-bottom: 6px; }
+#plan-overlay .land-coords{ font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-dim); margin-left: 6px; }
+/* The target's facts: the landing card's label/value blocks, side by side. */
+#plan-overlay .land-blocks{ display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0 20px; margin-top: 4px; }
+#plan-overlay .land-blocks .ps-blk{ padding: 0.4rem 0; border-top: none; }
+#plan-overlay .land-note{ margin-top: 8px; font-size: 0.7rem; color: var(--green, #38c868); }
+#plan-overlay .land-foot{ margin-top: 10px; font-size: 0.65rem; color: var(--text-dim); line-height: 1.5; }
+@media (max-width: 1100px){
+  #plan-overlay .land-layout{ grid-template-columns: 1fr; }
+  #plan-overlay .land-regions{ max-height: 160px; }
+  #plan-overlay .land-maps{ flex-direction: row; flex-wrap: wrap; }
+}
+#plan-overlay .land-3d{ margin-top: 10px; font-family: var(--font-sans); font-size: 0.72rem; color: var(--cyan); background: var(--cyan-dim); border: 1px solid var(--cyan); padding: 5px 10px; cursor: pointer; }
+#plan-overlay .land-3d:hover{ background: rgba(56, 184, 208, 0.2); }
+#plan-overlay .land-3d-note{ margin-top: 8px; font-size: 0.65rem; }

@@ -1,0 +1,15 @@
+# Tiny Worker that holds the AI Search namespace binding, which Pages
+# config doesn't support. The Pages Function /api/docs-search calls it
+# through the DOCS_WORKER service binding (../wrangler.toml).
+# Deploy: npx wrangler deploy   (from frontend/docs-worker/)
+name = "lunar-navigator-docs"
+main = "index.js"
+compatibility_date = "2025-10-01"
+workers_dev = false
+
+[vars]
+AI_SEARCH_NAME = "lunar-lander"
+
+[[ai_search_namespaces]]
+binding = "DOCS"
+namespace = "lunar-navigator-search"

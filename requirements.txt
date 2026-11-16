@@ -1,0 +1,6 @@
+# lunarsky (Phase 1 sky geometry)
+numpy>=2.0
+skyfield>=1.49
+
+# Tests: pytest
+# data/phase-3/build_sites.py also needs: rasterio pyproj shapely

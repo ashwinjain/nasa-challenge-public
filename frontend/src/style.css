@@ -1,0 +1,1756 @@
+/* Lunar Landing Site Navigator — Mission Control aesthetic */
+/* Type system: Inter for clean UI (Apple/Google-adjacent), JetBrains Mono for
+   the numeric/tabular readouts. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ── Neutral dark system — Apple precision meets Google Material clarity ─── */
+  --bg-deep: #0b0b0d;            /* neutral near-black (scene backdrop / letterbox) */
+  --bg-panel: rgba(24, 24, 27, 0.42);   /* frosted glass — more transparent, shared by all floating cards */
+  --bg-panel-solid: #1c1c1e;
+  --bg-raised: #2c2c2e;
+  --bg-input: rgba(44, 44, 46, 0.9);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-mid: rgba(255, 255, 255, 0.14);
+  --border-bright: rgba(255, 255, 255, 0.26);
+  /* Neutral text tiers, all clearing WCAG AA on the dark panels. */
+  --text: #f5f5f7;
+  --text-mid: #aeb0b6;
+  --text-dim: #86878c;
+  --accent: #0a84ff;             /* system blue — interactive / active chrome */
+  --accent-dim: rgba(10, 132, 255, 0.18);
+  --accent-bright: #4ba3ff;
+  --amber: #e8a020;              /* Sun / power — DATA only */
+  --amber-dim: rgba(232, 160, 32, 0.15);
+  --cyan: #38b8d0;               /* Earth / comms — DATA only */
+  --cyan-dim: rgba(56, 184, 208, 0.12);
+  --cyan-bright: #5cdcf0;
+  --red: #ff5f56;
+  --green: #30d158;
+  --night: #a78bfa;             /* night / darkness — purple, distinct from Earth-cyan */
+  --font-sans: "Inter", -apple-system, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 2px 14px rgba(0, 0, 0, 0.4);
+  /* The time scrubber has the strip just above the status bar (26px bar +
+     6px gap) to itself; panels docked at the bottom sit above it. */
+  --scrubber-h: 96px;
+  --panel-bottom: calc(32px + var(--scrubber-h) + 6px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--text);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
+}
+
+#scene-container {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+#scene-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Intro overlay ── */
+#intro-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, rgba(8, 10, 18, 0.3) 0%, rgba(4, 5, 8, 0.95) 100%);
+  transition: opacity 1s ease;
+}
+
+#intro-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#intro-hud { text-align: center; }
+
+.hud-title {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 1.5rem;
+  letter-spacing: 0.35em;
+  color: var(--text);
+  text-shadow: 0 0 40px rgba(56, 184, 208, 0.2);
+}
+
+.hud-subtitle {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 0.8rem;
+  color: var(--text-mid);
+  margin-top: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+#intro-status {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.7rem;
+  color: var(--accent);
+  margin-top: 2.5rem;
+  letter-spacing: 0.05em;
+}
+
+#skip-intro {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+#explore-btn { margin-top: 3rem; }
+
+/* ── Shared button styles ── */
+.hud-btn {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.72rem;
+  padding: 0.5rem 1.4rem;
+  border: 1px solid var(--border-mid);
+  background: var(--bg-panel);
+  color: var(--text-mid);
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s;
+  letter-spacing: 0.08em;
+}
+
+.hud-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.hud-btn.primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hud-btn.primary:hover {
+  background: var(--accent-dim);
+  color: var(--accent-bright);
+}
+
+/* ── Main HUD ── */
+#main-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+
+#main-hud > * { pointer-events: auto; }
+
+/* ── Top toolbar (.top-bar is shared with the Plan view's bar) ── */
+.top-bar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  position: relative;
+  /* No hard bar — just a soft top-down shade so text stays legible over the scene. */
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent);
+  white-space: nowrap;
+}
+#top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* backdrop-filter makes the bar its own stacking context, so the date
+     picker's z-index only counts inside it. Lift the whole bar above the
+     sidebar (55), panels (60), status bar (65) and indicators (70). */
+  z-index: 80;
+}
+
+.brand {
+  display: flex;
+  text-decoration: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding-right: 0.8rem;
+}
+
+.brand-mark {
+  font-size: 1.1rem;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.brand-title {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.brand-sub {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border);
+  margin: 0 0.7rem;
+}
+
+/* View-mode segmented toggle (Orbital / Moon Surface) */
+/* Centered floating action over the scene — glass pill in the app's theme (not a
+   loud blue fill); just the icon carries a touch of accent. */
+.surface-action {
+  position: absolute;
+  left: 50%;
+  bottom: 162px;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--bg-panel);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border-mid);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  padding: 0.66rem 1.42rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.surface-action:hover { background: var(--bg-raised); border-color: var(--border-bright); }
+.surface-action:active { transform: translateX(-50%) scale(0.97); }
+.surface-action svg { flex-shrink: 0; color: var(--accent-bright); }
+/* On the surface it reads as a quieter "← Back to orbit" (icon drops away). */
+.surface-action.active { color: var(--text-mid); }
+.surface-action.active:hover { color: var(--text); }
+.surface-action.active #surface-icon { display: none; }
+
+/* A gentle bob to invite the press (only in orbit; calmed on the surface). */
+@keyframes surface-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-5px); }
+}
+.surface-action:not(.active) { animation: surface-bob 2.4s ease-in-out infinite; }
+.surface-action:hover { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .surface-action { animation: none; } }
+
+/* Toolbar buttons */
+.toolbar-btn {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.68rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-mid);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.toolbar-btn:hover {
+  border-color: var(--border-bright);
+  color: var(--text);
+}
+
+.toolbar-btn.primary {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.toolbar-btn.primary:hover {
+  background: var(--accent-dim);
+  color: var(--accent-bright);
+}
+
+.toolbar-btn.small {
+  font-size: 0.6rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.toolbar-btn svg { flex-shrink: 0; }
+a.toolbar-btn { text-decoration: none; }
+
+/* Playback window pill: in the timeline's header row, between the current
+   moment and the legend. It only picks what the timeline plays. */
+#date-range {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+.plan-action {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  padding: 0.42rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-decoration: none;
+}
+.plan-action:hover { border-color: var(--border-bright); background: var(--bg-raised); }
+
+#current-instant {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.7rem;
+}
+
+.instant-label {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  color: var(--text-dim);
+}
+
+.instant-value {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--amber);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+/* Single date-range pill — opens the calendar, which applies on pick. */
+.date-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.date-pill:hover:not(:disabled) { border-color: var(--border-bright); background: var(--bg-raised); }
+.date-pill.active { border-color: var(--accent); }
+.date-pill:disabled { opacity: 0.6; cursor: default; }
+.date-pill > svg:first-child { color: var(--text-mid); flex-shrink: 0; }
+.date-pill .date-pill-caret { color: var(--text-dim); flex-shrink: 0; }
+#date-pill-label { font-family: var(--font-mono); letter-spacing: 0.01em; white-space: nowrap; }
+/* The compact two-line version in the timeline row ("PLAYBACK" over the dates). */
+#time-scrubber-container .date-pill {
+  flex: none;
+  gap: 0.4rem;
+  padding: 0.22rem 0.55rem;
+  font-size: 0.64rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+.date-pill-text { display: flex; flex-direction: column; align-items: flex-start; }
+.date-pill-key { font-family: var(--font-sans); font-size: 0.54rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); }
+
+.date-label {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+
+.date-value {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 7.5em;
+  padding: 0;
+}
+
+.date-value::placeholder {
+  color: var(--text-dim);
+  opacity: 0.4;
+}
+
+.date-value.invalid { color: var(--amber); }
+
+/* Custom coords */
+.coord-label {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.coord-label input {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.2rem 0.4rem;
+  width: 5.5em;
+}
+
+/* ── Date picker dropdown ── */
+.date-picker {
+  position: absolute;
+  /* Opens upward from the timeline (main.js sets left to line up with the pill). */
+  bottom: calc(100% + 6px);
+  z-index: 200;
+  background: var(--bg-panel);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  width: 272px;
+  box-shadow: var(--shadow);
+}
+
+.dp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.dp-title {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.72rem;
+  color: var(--text);
+  letter-spacing: 0.06em;
+  flex: 1;
+  text-align: center;
+}
+
+.dp-nav {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.dp-nav:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.dp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  margin-bottom: 0.25rem;
+}
+
+.dp-weekdays span {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 0.15rem 0;
+}
+
+.dp-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.dp-day {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.78rem;
+  text-align: center;
+  padding: 0.36rem 0;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  transition: background 0.1s, color 0.1s;
+}
+
+.dp-day:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dp-day.other-month { color: var(--text-dim); opacity: 0.35; }
+.dp-day.today { border-color: var(--amber); color: var(--amber); }
+.dp-day.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+/* Range: the start and end are solid; the days between are tinted. */
+.dp-days { gap: 1px 0; }
+.dp-day.in-range { background: rgba(10, 132, 255, 0.28); color: var(--accent-bright); }
+.dp-day.in-range.preview { background: rgba(56, 184, 208, 0.18); }
+.dp-day.range-start,
+.dp-day.range-end {
+  background: var(--accent);
+  border-color: var(--accent-bright);
+  color: #061018;
+  font-weight: 600;
+}
+.dp-day.range-end.preview { background: rgba(56, 184, 208, 0.45); color: var(--text); }
+.dp-day.too-long,
+.dp-day.too-long.in-range,
+.dp-day.range-end.too-long { background: rgba(224, 80, 80, 0.14); color: #e07070; border-color: transparent; }
+.dp-day.other-month.in-range,
+.dp-day.other-month.range-start,
+.dp-day.other-month.range-end { opacity: 0.6; }
+
+.dp-hint {
+  margin-top: 0.5rem;
+  font-family: var(--font-sans);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  text-align: center;
+}
+.dp-hint.error { color: #e07070; }
+.dp-day.disabled { opacity: 0.15; cursor: not-allowed; pointer-events: none; }
+
+/* ── Left sidebar: Site list ── */
+#site-sidebar {
+  position: absolute;
+  top: 48px;
+  left: 12px;
+  width: 248px;
+  max-height: calc(100vh - 48px - var(--panel-bottom) - 12px);
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 55;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.7rem 0.3rem;
+}
+
+.sidebar-header h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.sidebar-count {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.6rem;
+  color: var(--text-mid);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+}
+
+.site-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.15rem 0.3rem 0.35rem;
+}
+
+.site-group-header {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  padding: 0.45rem 0.45rem 0.2rem;
+}
+
+
+.site-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.site-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.site-item.active {
+  background: var(--accent-dim);
+}
+
+.site-name {
+  flex: 1 1 auto;
+  font-family: var(--font-sans);
+  font-weight: 450;
+  font-size: 0.74rem;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.site-item.active .site-name { color: var(--accent-bright); font-weight: 550; }
+
+.site-meta {
+  flex: none;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.62rem;
+  color: var(--text-dim);
+}
+
+/* Coordinates are clutter in a 9-item browse list — they show on the site card
+   when you click. Keep only the % sun, the one number that drives the choice. */
+.site-meta span:not(.site-sunlit) { display: none; }
+
+.site-sunlit {
+  color: var(--amber);
+  font-weight: 400;
+}
+
+.site-info-btn {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-dim);
+  opacity: 0.5;
+  transition: opacity 0.12s, color 0.12s;
+}
+.site-item:hover .site-info-btn { opacity: 1; color: var(--text-mid); }
+.site-info-btn:hover { color: var(--accent-bright); opacity: 1; }
+
+.sidebar-footer {
+  padding: 0.4rem 0.7rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Off-screen body indicators ── */
+.body-indicator {
+  position: absolute;
+  z-index: 70;
+  pointer-events: none;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.body-indicator .indicator-caret {
+  font-size: 0.7rem;
+  line-height: 1;
+  display: inline-block;
+}
+
+.body-indicator .indicator-label {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+}
+
+.body-indicator.sun { color: var(--amber); }
+.body-indicator.earth { color: #4080e0; }
+
+/* ── Time scrubber ── */
+#time-scrubber-container {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw - 48px));
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-sm);
+  padding: 0.35rem 0.8rem;
+  /* Fixed height so panels can be kept just above it (--panel-bottom).
+     Hidden, not display:none, until data loads so its box always exists. */
+  height: var(--scrubber-h);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  visibility: hidden;
+  z-index: 5;
+}
+/* While the playback calendar is open it must sit over the side panels. */
+#time-scrubber-container.picker-open { z-index: 80; }
+/* Inside the frosted timeline the calendar's own blur has nothing to blur, so
+   it gets a solid backing to stay readable over the globe. */
+#time-scrubber-container .date-picker { background: var(--bg-panel-solid); }
+
+.scrubber-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.scrubber-btn {
+  flex: none;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.55rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-mid);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.scrubber-btn:hover:not(:disabled) { color: var(--text); background: rgba(255, 255, 255, 0.08); }
+.scrubber-btn:focus-visible { outline: 1px solid var(--accent-bright); outline-offset: 1px; }
+.scrubber-btn:disabled { opacity: 0.4; cursor: default; }
+
+#play-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 50%;
+  color: var(--text);
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+#play-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+#play-btn:active:not(:disabled) { transform: scale(0.9); }
+#play-btn .icon-pause { display: none; }
+#play-btn.playing .icon-play { display: none; }
+#play-btn.playing .icon-pause { display: block; }
+
+#speed-btn { min-width: 62px; }
+
+#eph-info-btn { width: 30px; height: 30px; padding: 0; border: none; background: none; border-radius: 50%; color: var(--text-dim); }
+#eph-info-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); color: var(--text); }
+#eph-info-btn[aria-expanded="true"] { background: rgba(255, 255, 255, 0.08); color: var(--accent); }
+
+/* A mini-timeline (Power / Comms / Both lanes + a date axis) sits directly above
+   the slider, all the same width, so it reads like a timeline where you scrub. */
+.scrubber-viz {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.scrubber-legend { display: flex; gap: 0.9rem; font-family: var(--font-sans); font-size: 0.6rem; letter-spacing: 0.02em; color: var(--text-mid); }
+.scrubber-legend span { display: inline-flex; align-items: center; gap: 0.28rem; }
+.scrubber-legend span::before { content: ""; width: 7px; height: 7px; border-radius: 2px; display: inline-block; }
+.scrubber-legend .sl-sun::before { background: var(--amber); }
+.scrubber-legend .sl-earth::before { background: var(--cyan); }
+.scrubber-legend .sl-both::before { background: var(--green); }
+.scrubber-tracks { width: 100%; height: 18px; display: block; }
+.scrubber-dates { position: relative; height: 13px; }
+.scrubber-dates span { position: absolute; top: 0; transform: translateX(-50%); font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-dim); white-space: nowrap; }
+.scrubber-dates span:first-child { transform: none; }
+.scrubber-dates span:last-child { transform: translateX(-100%); }
+
+/* Clean custom slider — small accent thumb, thin track — kept clear of the dates. */
+#time-scrubber {
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  height: 14px;
+  margin-top: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+/* Track fills with the accent up to the current position (WebKit via gradient,
+   Firefox via ::-moz-range-progress), the rest a translucent rail. */
+#time-scrubber::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--accent) 0 var(--seek, 0%), rgba(255, 255, 255, 0.16) var(--seek, 0%) 100%); }
+#time-scrubber::-moz-range-track { height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.16); }
+#time-scrubber::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent); }
+#time-scrubber::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #fff; border: none; margin-top: -4px; cursor: pointer; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45); transition: transform 0.12s; }
+#time-scrubber::-moz-range-thumb { width: 12px; height: 12px; border-radius: 50%; background: #fff; border: none; cursor: pointer; }
+#time-scrubber:hover::-webkit-slider-thumb, #time-scrubber:active::-webkit-slider-thumb { transform: scale(1.3); }
+
+/* Ephemeris provenance popover, anchored above the ⓘ button. */
+.eph-pop {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0.8rem;
+  width: 268px;
+  background: var(--bg-panel-solid);
+  border: 1px solid var(--border-mid);
+  padding: 0.6rem 0.7rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
+  z-index: 70;
+}
+.eph-pop[hidden] { display: none; }
+.eph-pop-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.3rem;
+}
+.eph-pop-key {
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.eph-pop-val {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text);
+}
+.eph-pop-note {
+  font-family: var(--font-sans);
+  font-size: 0.58rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+  margin: 0.45rem 0 0;
+}
+.eph-pop a { color: var(--accent-bright); text-decoration: none; }
+.eph-pop a:hover { text-decoration: underline; }
+
+/* Current-moment header, sitting above the Power/Comms/Both diagram. */
+.scrubber-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; }
+#time-label { display: flex; align-items: baseline; gap: 0.55rem; white-space: nowrap; font-family: var(--font-mono); min-width: 0; overflow: hidden; }
+.scrubber-legend { flex: none; }
+#time-label .tl-date { font-size: 0.66rem; font-weight: 500; color: var(--text); }
+#time-label .tl-ang { font-size: 0.6rem; color: var(--text-mid); }
+
+/* ── Dockable panels ── */
+.panel.dockable {
+  position: absolute;
+  z-index: 60;
+  background: var(--bg-panel);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  min-height: 80px;
+  max-width: 90vw;
+  max-height: 80vh;
+  transition: box-shadow 0.15s;
+}
+
+.panel.dockable:hover {
+  box-shadow: var(--shadow);
+}
+
+.panel.dockable.dragging {
+  opacity: 0.85;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  transition: none;
+}
+
+/* Default dock positions — offset for sidebar */
+#timeline-panel { bottom: var(--panel-bottom); right: 8px; width: 420px; }
+/* Bottom-right at the scrubber's own bottom margin: a horizon minimap in surface
+   view. main.js lifts it above the scrubber when the screen is too narrow for
+   the two side by side. */
+/* Pinned top-right, under the Plan & Compare button. */
+#sky-panel { top: 52px; right: 12px; width: 320px; }
+#sky-chart { cursor: grab; touch-action: none; user-select: none; }
+#sky-chart.dragging { cursor: grabbing; }
+/* Solar panel hangs under the Sites card as one left column (top set in JS). */
+/* Pinned under the sites card. The cap is what keeps it off the scrubber on a
+   short window: without it the panel just ran past the bottom of the screen. */
+/* Landing & power card: left column, under the Sites card (top set in JS by
+   positionSitePanel). The cap keeps it off the scrubber on a short window. */
+#panel-site-panel {
+  top: 330px; left: 12px; width: 248px; min-width: 248px; min-height: 0;
+  /* Overridden in JS (positionSitePanel) from the card's real top and the
+     left column's floor; this is only the first-paint fallback. */
+  max-height: calc(100vh - 330px - var(--panel-bottom) - 12px);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.65rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Panel titles match the Sites card header exactly — one consistent style. */
+.panel-header h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.74rem;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.panel-header-actions {
+  display: flex;
+  gap: 0.2rem;
+  align-items: center;
+}
+
+/* Panel buttons — SVG icons */
+.panel-btn {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.panel-btn:hover {
+  border-color: var(--border-mid);
+  color: var(--accent);
+}
+
+.panel-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  color: var(--text-dim);
+}
+
+.panel-btn:disabled:hover {
+  border-color: transparent;
+  color: var(--text-dim);
+}
+
+.panel-toggle svg {
+  transition: transform 0.2s;
+}
+
+.panel.collapsed .panel-toggle svg {
+  transform: rotate(-90deg);
+}
+
+.panel-body {
+  padding: 0.5rem 0.65rem;
+  overflow-y: auto;
+  height: 200px;
+  /* A flex item defaults to min-height: auto, which refuses to shrink below
+     its content. Inside a panel that is capped to the space above the
+     scrubber that meant the body overflowed and the overflow was clipped, so
+     the end of the card simply could not be reached. Zero lets it give way
+     and use the overflow-y: auto above. */
+  min-height: 0;
+  transition: height 0.2s, padding 0.2s;
+}
+
+.panel.collapsed .panel-body {
+  height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+/* Collapsed = just the header; drop the min-height so no empty box remains. */
+.panel.dockable.collapsed { min-height: 0; }
+.panel.collapsed .panel-body { border: none; }
+
+/* Resize handle removed with the drag feature — panels are static. */
+.panel-resize { display: none; }
+
+.panel-note {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.01em;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Site details popup ── */
+.site-info {
+  position: absolute;
+  /* On the right, under the Sky panel: top, width and max-height are set in
+     JS (positionSiteInfo) from the space actually free there. It dismisses on
+     an outside click. */
+  right: 12px;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: site-info-in 0.16s ease-out;
+}
+
+@keyframes site-info-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.site-info-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.4rem 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.site-info-title { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+
+.site-info-eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 0.6rem;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+}
+
+.site-info-name {
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.site-info-close {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.site-info-close:hover { border-color: var(--border-mid); color: var(--accent); }
+
+.site-info-body {
+  padding: 0.3rem 0.7rem 0.5rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.site-info-foot {
+  padding: 0.4rem 0.7rem;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+.site-info-foot a {
+  color: var(--accent-bright);
+  text-decoration: none;
+}
+.site-info-foot a:hover { text-decoration: underline; }
+
+/* ── Site markers overlay (the 9 Artemis III regions) ── */
+#site-markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+#site-leaders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+/* Hollow ring in the category colour (set via `color`) with a small centre
+   pip — reads as a precise instrument marker, not a solid map pin. */
+.site-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--cat, #9aa6bc);
+  border: 1.5px solid currentColor;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.7);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: transform 0.12s, opacity 0.15s;
+}
+
+.site-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.site-dot:hover { transform: scale(1.25); }
+
+/* Selected: a SOLID WHITE disc (vs the hollow neutral rings) with a dark rim so
+   it pops on bright terrain, plus one clean white halo ring at a gap. White is
+   neutral — it never collides with Sun-amber or Earth-cyan from the data panels.
+   Filled-vs-hollow is the real signal; no double ring, no blur. */
+.site-dot.selected {
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+  color: #ffffff;
+  background: #ffffff;
+  border-color: #060a12;
+  border-width: 2px;
+}
+
+/* The hollow-ring pip isn't needed on a filled disc. */
+.site-dot.selected::after { display: none; }
+
+/* Single halo ring, sitting off the disc at a clear gap. */
+.site-dot.selected::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+}
+
+.site-label {
+  position: absolute;
+  pointer-events: auto;
+  cursor: pointer;
+  transform: translateY(-50%);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 450;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  color: #e6ebf3;
+  /* No backdrop blur: these move every frame the camera does, and a blur
+     there gets redrawn each time. A little more opacity keeps them legible. */
+  background: rgba(6, 9, 15, 0.6);
+  border: none;
+  border-radius: 8px;
+  padding: 3px 7px;
+  white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+.site-label:hover { color: #fff; }
+
+.site-label.selected {
+  color: #ffffff;
+  font-weight: 600;
+  background: rgba(8, 14, 20, 0.55);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+}
+
+.site-leader { stroke: rgba(180, 196, 216, 0.4); stroke-width: 1; fill: none; }
+
+/* ── Lander + panel-spot labels (surface view) ── */
+#surface-markers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.surf-label {
+  position: absolute;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  transform: translate(-50%, -100%);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+  background: rgba(6, 9, 15, 0.7);   /* no backdrop blur, as .site-label */
+  border-left: 2px solid var(--surf-color, #e6ebf3);
+  border-radius: 6px;
+  padding: 4px 8px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.surf-label.sun { --surf-color: var(--amber); }
+/* A label for a spot you can turn to (the panel pole): click to face it. */
+.surf-label.go { pointer-events: auto; cursor: pointer; }
+.surf-label.go:hover { background: rgba(20, 24, 32, 0.85); }
+.surf-label.night { --surf-color: var(--cyan-bright); }
+.surf-label.zone { --surf-color: var(--green); }
+.surf-title { font-size: 11px; font-weight: 500; color: var(--surf-color, #e6ebf3); }
+.surf-sub { font-size: 10px; color: var(--text); font-family: var(--font-mono); }
+.site-leader.selected { stroke: rgba(255, 255, 255, 0.7); stroke-width: 1.1; }
+
+/* ── Dock zone hints ── */
+#dock-zones {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 55;
+  display: none;
+}
+
+#dock-zones.active { display: block; }
+
+.dock-zone {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border: 1.5px dashed rgba(56, 184, 208, 0.25);
+  border-radius: 8px;
+  transition: all 0.15s;
+  pointer-events: auto;
+}
+
+.dock-zone[data-corner="top-left"]     { top: 50px;  left: 228px; }
+.dock-zone[data-corner="top-right"]    { top: 50px;  right: 8px; }
+.dock-zone[data-corner="bottom-left"]  { bottom: var(--panel-bottom); left: 228px; }
+.dock-zone[data-corner="bottom-right"] { bottom: var(--panel-bottom); right: 8px; }
+
+.dock-zone.hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  box-shadow: 0 0 16px rgba(56, 184, 208, 0.15);
+}
+
+/* ── Bottom status bar ── */
+/* Just the CAM readout as a compact chip in the bottom-right — no full-width
+   bar, so there's no empty strip across the bottom. */
+/* Just the CAM numbers in the top-right — no box, it's ambient info. */
+#status-bar {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;              /* bottom-left; the bottom-right corner is the chat's */
+  height: 22px;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  z-index: 65;
+}
+
+.status-section {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0 0.6rem;
+  border-right: 1px solid var(--border);
+  height: 100%;
+}
+
+.status-section:last-child { border-right: none; }
+.status-section.status-right { margin-left: auto; border-right: none; border-left: none; }
+
+.status-key {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+}
+
+.status-val {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 0.58rem;
+  color: var(--text-mid);
+  letter-spacing: 0.02em;
+}
+
+/* Focus-mode toggle, top-right just left of Plan & Compare (`right` set in JS
+   from that button's position). Not inside the top bar: focus mode hides the
+   bar, and this has to stay clickable to come back. */
+.focus-hint {
+  position: absolute;
+  top: 8px;
+  right: 170px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  padding: 0.42rem 0.8rem;
+  cursor: pointer;
+  z-index: 66;
+  transition: background 0.15s, border-color 0.15s;
+}
+.focus-hint:hover { border-color: var(--border-bright); background: var(--bg-raised); }
+.focus-hint kbd {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-mid);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-mid);
+  border-radius: 4px;
+  padding: 0.06rem 0.34rem;
+  line-height: 1.4;
+}
+
+/* Walking keys and distance from the lander, stacked above the focus hint. */
+.walk-hint {
+  position: absolute;
+  bottom: 78px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  color: var(--text-mid);
+  background: var(--bg-input);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  padding: 0.38rem 0.7rem;
+  z-index: 66;
+  pointer-events: none;
+}
+.walk-hint[hidden] { display: none; }
+.walk-hint.at-edge { color: var(--text); border-color: var(--border-bright); }
+.walk-hint kbd {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--text-mid);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-mid);
+  border-radius: 4px;
+  padding: 0.06rem 0.34rem;
+  line-height: 1.4;
+}
+/* "(from site origin)" beside the Sky title: its tracks and skyline are the
+   lander's, wherever you've walked. */
+.panel-origin { font-family: var(--font-sans); font-size: 0.6rem; color: var(--text-mid); white-space: nowrap; }
+
+/* Globe map layer toggle + legend swatch (orbital view only). */
+.layer-toggle {
+  position: absolute;
+  bottom: 78px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-sans);
+  font-size: 0.7rem;
+  color: var(--text-mid);
+  background: var(--bg-input);
+  border: 1px solid var(--border-mid);
+  border-radius: var(--radius-sm);
+  padding: 0.38rem 0.7rem;
+  z-index: 66;
+  cursor: pointer;
+  user-select: none;
+}
+.layer-toggle:hover { border-color: var(--border-bright); color: var(--text); }
+.layer-toggle input { margin: 0; accent-color: #7fb4ff; cursor: pointer; }
+.layer-swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; }
+.layer-swatch.psr { background: #4f7fb8; box-shadow: inset 0 0 0 1px rgba(170, 210, 255, 0.55); }
+body.view-surface .layer-toggle { display: none; }
+
+/* Focus mode (press F): fade everything but the timeline seeker, the scene, and
+   the focus hint itself (so you can see how to exit). */
+#main-hud.focus-mode #top-bar,
+#main-hud.focus-mode #site-sidebar,
+#main-hud.focus-mode #panel-site-panel,
+#main-hud.focus-mode #timeline-metrics,
+#main-hud.focus-mode #surface-btn,
+#main-hud.focus-mode #walk-hint,
+#main-hud.focus-mode #psr-toggle,
+#main-hud.focus-mode #site-info,
+#main-hud.focus-mode #sky-panel,
+#main-hud.focus-mode #status-bar,
+#main-hud.focus-mode #site-markers,
+#main-hud.focus-mode #site-leaders,
+#main-hud.focus-mode .body-indicator {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease;
+}
+
+/* SVG charts */
+#timeline-chart {
+  width: 100%;
+  height: 100%;
+}
+
+/* Scrollbar styling for panels */
+.panel-body::-webkit-scrollbar,
+.site-list::-webkit-scrollbar,
+.site-info-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-body::-webkit-scrollbar-track,
+.site-list::-webkit-scrollbar-track,
+.site-info-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-body::-webkit-scrollbar-thumb,
+.site-list::-webkit-scrollbar-thumb,
+.site-info-body::-webkit-scrollbar-thumb {
+  background: var(--border-mid);
+  border-radius: 3px;
+}
+
+.panel-body::-webkit-scrollbar-thumb:hover,
+.site-list::-webkit-scrollbar-thumb:hover,
+.site-info-body::-webkit-scrollbar-thumb:hover {
+  background: var(--border-bright);
+}
+
+/* Firefox + the detail card: thin, themed, never the native white bar. */
+.site-info-body, .panel-body, .site-list { scrollbar-width: thin; scrollbar-color: var(--border-mid) transparent; }
+
+/* Responsive: phones only. Down to 800 px wide the desktop layout fits
+   (left column, tiles, Sky panel). */
+@media (max-width: 700px) {
+  #site-sidebar { width: 180px; }
+  .panel.dockable { width: calc(100vw - 200px) !important; }
+  .panel-body { height: 160px; }
+}
+
+/* ── Metrics strip under the timeline (from /api/sky → metrics) ── */
+#timeline-panel .panel-body { height: auto; }
+#timeline-chart { display: block; height: auto; }  /* override the 100% height above so the strip fits below */
+
+/* ── Sky plot (skyplot.js) ── */
+#sky-panel .panel-body {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+/* The svg sits absolutely inside a flex-filling box, so drawing it at the
+   box's size can't change the box (skyplot.js redraws on every resize). */
+#sky-chart-wrap { position: relative; flex: 1; min-height: 0; }
+#sky-chart { position: absolute; inset: 0; display: block; }
+
+/* The id rules above outrank `.panel.collapsed .panel-body`; restore it. */
+#timeline-panel.collapsed .panel-body,
+#sky-panel.collapsed .panel-body { height: 0; }
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* Window summary: a centered row of tiles under the date pill (display:grid is
+   set by renderMetrics). */
+/* Full-year tiles for the selected site. main.js (positionMetricsStrip) fits
+   the strip into the gap between the left column and the Sky panel; the
+   tiles wrap to 2×2 when the gap is narrow. */
+.metrics-strip {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: 6px;
+}
+.metrics-strip.fitted { transform: none; }
+.metrics-strip .metric { min-width: 86px; flex: 0 1 auto; }
+/* A full-width line under the tiles: says what they cover. */
+.metrics-strip .metrics-scope {
+  flex: 1 0 100%;
+  text-align: center;
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  letter-spacing: 0.01em;
+  margin-top: 2px;
+}
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+}
+.metric-value {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--text);
+  white-space: nowrap;
+}
+.metric.sun .metric-value { color: var(--amber); }
+.metric.earth .metric-value { color: var(--cyan); }
+.metric.total .metric-value { color: var(--accent-bright); }
+.metric-label {
+  font-family: var(--font-sans);
+  font-size: 0.56rem;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+}
+
+/* ── Horizon model toggle (top bar) ── */
+#horizon-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.seg { display: flex; }
+.seg-btn {
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.seg-btn + .seg-btn { border-left: none; }
+.seg-btn:hover:not(:disabled) { color: var(--text); border-color: var(--border-bright); }
+.seg-btn.active { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+.seg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+/* ── Solar panel site card ── */
+/* The body takes what the card's max-height leaves and scrolls, so the end of
+   the card is never clipped on a short window. */
+#panel-site-panel .panel-body { height: auto; max-height: none; flex: 1 1 auto; }
+#panel-site-panel.collapsed .panel-body { height: 0; }
+#panel-site-body { font-size: 0.68rem; color: var(--text); line-height: 1.45; }
+#panel-site-body .sun { color: var(--amber); }
+.ps-empty { color: var(--text-mid); }
+.ps-block {
+  padding: 0.35rem 0.5rem;
+  margin-bottom: 0.35rem;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--amber);
+  background: rgba(30, 30, 45, 0.5);
+}
+.ps-block.ps-lander { border-left-color: var(--text-dim); }
+.ps-block.ps-same { border-left-color: var(--border-bright); }
+.ps-title {
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.ps-main { font-family: var(--font-mono); font-size: 0.72rem; }
+.ps-sub { color: var(--text-mid); font-size: 0.62rem; }
+.ps-keep { color: var(--accent); font-size: 0.62rem; margin-top: 0.15rem; }
+.ps-foot { color: var(--text-dim); font-size: 0.56rem; margin-top: 0.3rem; }
+
+/* Redesigned solar-panel card: two hero tiles + "worth the walk?" rows. */
+.ps-tiles { display: flex; gap: 0.5rem; margin-bottom: 0.45rem; }
+.ps-tile { flex: 1; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem 0.6rem; }
+.ps-tile-val { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 500; color: var(--text); line-height: 1.05; white-space: nowrap; }
+.ps-tile-val.sun { color: var(--amber); }
+.ps-tile-val.night { color: var(--night); }
+.ps-tile-label { font-family: var(--font-sans); font-size: 0.6rem; letter-spacing: 0.02em; color: var(--text-mid); margin-top: 0.2rem; }
+.ps-fine { font-family: var(--font-mono); font-size: 0.62rem; color: var(--text-mid); margin-bottom: 0.55rem; }
+.ps-alts-head { font-family: var(--font-sans); font-weight: 600; font-size: 0.66rem; letter-spacing: 0.01em; color: var(--text); margin-bottom: 0.35rem; }
+.ps-alt { display: flex; align-items: baseline; gap: 0.5rem; padding: 0.22rem 0; }
+/* Each pick is a button: from orbit it lands you on the surface, and on the
+   surface it turns you to face its marked pole. Hover matches the site list. */
+.ps-alt-go { width: 100%; margin: 0 -0.45rem; padding: 0.3rem 0.45rem; background: none; border: 0; border-radius: var(--radius-sm); text-align: left; cursor: pointer; transition: background 0.12s ease; -webkit-appearance: none; appearance: none; }
+.ps-alt-go:hover { background: rgba(255, 255, 255, 0.06); }
+.ps-alt-go:focus-visible { outline: 1px solid var(--border-bright); outline-offset: 1px; }
+.ps-alt-go:active { background: var(--border); }
+.ps-alt-k { flex: 1 1 auto; font-family: var(--font-sans); font-size: 0.68rem; color: var(--text); white-space: nowrap; }
+.ps-alt-d { font-family: var(--font-mono); font-size: 0.74rem; color: var(--accent-bright); font-weight: 500; white-space: nowrap; }
+.ps-alt-d.sun { color: var(--amber); }
+.ps-alt-d.night { color: var(--night); }
+.ps-alt-w { font-family: var(--font-mono); font-size: 0.64rem; color: var(--text-mid); min-width: 74px; text-align: right; }
+.ps-surface-hint { display: block; width: 100%; margin-top: 0.5rem; padding: 0.4rem 0.6rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-mid); font-family: var(--font-sans); font-size: 0.64rem; text-align: left; cursor: pointer; transition: border-color 0.12s ease, color 0.12s ease; -webkit-appearance: none; appearance: none; }
+.ps-surface-hint:hover { border-color: var(--border-bright); color: var(--text); }
+/* On the surface you're already there: drop the "go to surface" hint. */
+body.view-surface .ps-surface-hint { display: none; }
+.ps-alt-stack { flex-wrap: wrap; row-gap: 0.1rem; }
+.ps-alt-stack .ps-alt-w { flex-basis: 100%; text-align: left; min-width: 0; padding-left: 1.15rem; }
+.ps-verdict { font-family: var(--font-sans); font-size: 0.68rem; line-height: 1.4; color: var(--text-mid); padding: 0.1rem 0; }
+.ps-spinner {
+  display: inline-block;
+  width: 9px; height: 9px;
+  margin-right: 0.4rem;
+  border: 1.5px solid var(--border-bright);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: ps-spin 0.8s linear infinite;
+  vertical-align: -1px;
+}
+@keyframes ps-spin { to { transform: rotate(360deg); } }
+
+/* ── Landing & power card: header row + label/value blocks ── */
+.ps-header { cursor: pointer; gap: 0.5rem; padding: 0.55rem 0.7rem; }
+/* The region name wraps rather than running under the kit total. */
+.ps-head-text { flex-direction: column; align-items: flex-start; gap: 0.05rem; min-width: 0; flex: 1 1 auto; }
+.ps-head-text h3 { font-size: 0.8rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.2; }
+.ps-header .panel-header-actions { flex: none; }
+.ps-head-sub { font-size: 0.62rem; color: var(--text-dim); }
+.ps-head-kit { font-family: var(--font-mono); font-size: 0.84rem; font-weight: 600; color: var(--amber); white-space: nowrap; }
+.ps-info {
+  position: relative; display: inline-grid; place-items: center;
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 1px solid var(--border-mid); color: var(--text-dim);
+  font: 600 9px var(--font-sans); cursor: help;
+}
+.ps-info[hidden] { display: none; }
+.ps-info:hover, .ps-info:focus-visible { color: var(--text); border-color: var(--border-bright); outline: none; }
+/* The ⓘ's text lives in one body-level tooltip (placed by JS, clamped to the
+   viewport) so the panel's overflow can't clip it. */
+#info-tip {
+  position: fixed; z-index: 1000; max-width: 260px; pointer-events: none;
+  padding: 0.5rem 0.6rem; border-radius: var(--radius-sm);
+  background: var(--bg-panel-solid); border: 1px solid var(--border-mid); box-shadow: var(--shadow);
+  color: var(--text-mid); font: 400 0.64rem/1.45 var(--font-sans); text-align: left;
+}
+#info-tip[hidden] { display: none; }
+#panel-site-panel.collapsed .ps-header { border-bottom-color: transparent; }
+.ps-blk { padding: 0.5rem 0; }
+/* The Panels block turns you to face the panel pole (main.js). */
+.ps-blk-go { cursor: pointer; margin: 0 -0.45rem; padding-left: 0.45rem; padding-right: 0.45rem; border-radius: var(--radius-sm); transition: background 0.12s ease; }
+.ps-blk-go:hover { background: rgba(255, 255, 255, 0.06); }
+.ps-blk-go:focus-visible { outline: 1px solid var(--border-bright); outline-offset: 1px; }
+.ps-blk-go .ps-go-hint { font-size: 0.6rem; color: var(--text-dim); margin-top: 0.2rem; }
+.ps-blk + .ps-blk { border-top: 1px solid var(--border); }
+.ps-blk:first-child { padding-top: 0.1rem; }
+.ps-blk-h {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;
+  font: 600 0.58rem var(--font-sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);
+}
+.ps-tag {
+  font-size: 0.58rem; font-weight: 500; letter-spacing: 0.01em; text-transform: none;
+  padding: 0.05rem 0.45rem; border-radius: 999px; background: var(--bg-raised); color: var(--text-mid);
+}
+.ps-kv { display: grid; grid-template-columns: 1fr auto; row-gap: 0.2rem; margin: 0; }
+.ps-kv dt { color: var(--text-mid); font-size: 0.66rem; }
+.ps-kv dd { margin: 0; text-align: right; font: 500 0.7rem var(--font-mono); font-variant-numeric: tabular-nums; color: var(--text); }
+.ps-kv dd.sun { color: var(--amber); }
+.ps-kv dd.night { color: var(--night); }
+.ps-kv dd.ok { color: var(--green); }
+.ps-kv dd.earth { color: var(--cyan); }
+.ps-kv dd.relay { color: #a08cf0; }   /* RELAY in shared/colors.js */
+
+/* ── Assumptions: a link bottom-left that opens assumptions.html in a new tab ── */
+.assume-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem; height: 22px; padding: 0 0.55rem;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--bg-panel-solid);
+  color: var(--text-dim); font: 500 0.62rem var(--font-sans); letter-spacing: 0.04em; cursor: pointer;
+  text-decoration: none;
+}
+.assume-btn:hover { color: var(--text); border-color: var(--border-bright); }
+
+/* Site details: free text under its label, inside a label/value block */
+.si-text { margin-top: 0.4rem; }
+.si-text-k { color: var(--text-mid); font-size: 0.66rem; margin-bottom: 0.1rem; }
+.si-text-v { color: var(--text); font-size: 0.7rem; line-height: 1.4; word-break: break-word; }
+.si-text-v.muted { color: var(--text-dim); font-style: italic; }
