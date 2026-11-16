@@ -630,18 +630,24 @@ function positionSitePanel() {
   panel.style.maxHeight = Math.max(60, floor - top) + "px";
 }
 
-// The full-year tiles sit in the gap between the left column and the Sky
-// panel (or the right edge when the Sky panel is hidden), never on top of
-// either; the tiles wrap when the gap is narrow.
+// The full-year tiles sit in the top row, in the gap between the brand and
+// left column and the Sky panel and top-right buttons (or the right edge),
+// never on top of any of them; the tiles wrap when the gap is narrow.
 function positionMetricsStrip() {
   const el = document.getElementById("timeline-metrics");
   if (!el || el.style.display === "none") return;
   const sb = document.getElementById("site-sidebar").getBoundingClientRect();
   if (!sb.height) return;
-  const sky = document.getElementById("sky-panel");
-  const skyR = sky && sky.style.display !== "none" ? sky.getBoundingClientRect() : null;
-  const left = sb.right + 12;
-  const right = (skyR && skyR.width ? skyR.left : window.innerWidth) - 12;
+  const shown = (id) => {
+    const e = document.getElementById(id);
+    if (!e || getComputedStyle(e).display === "none") return null;
+    const r = e.getBoundingClientRect();
+    return r.width ? r : null;
+  };
+  const brand = shown("top-bar-brand");
+  const left = Math.max(sb.right, brand ? brand.right : 0) + 12;
+  const rightEdges = ["sky-panel", "focus-hint", "plan-btn"].map(shown).filter(Boolean).map((r) => r.left);
+  const right = Math.min(window.innerWidth, ...rightEdges) - 12;
   el.classList.add("fitted");
   el.style.left = left + "px";
   el.style.width = Math.max(0, right - left) + "px";

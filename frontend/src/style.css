@@ -180,7 +180,11 @@ body {
      picker's z-index only counts inside it. Lift the whole bar above the
      sidebar (55), panels (60), status bar (65) and indicators (70). */
   z-index: 80;
+  /* The bar spans the full width but is empty in the middle, where the
+     metrics strip sits: let the pointer through to it. */
+  pointer-events: none;
 }
+#top-bar > * { pointer-events: auto; }
 
 .brand {
   display: flex;
@@ -1545,12 +1549,13 @@ body.view-surface .layer-toggle { display: none; }
 
 /* Window summary: a centered row of tiles under the date pill (display:grid is
    set by renderMetrics). */
-/* Full-year tiles for the selected site. main.js (positionMetricsStrip) fits
-   the strip into the gap between the left column and the Sky panel; the
-   tiles wrap to 2×2 when the gap is narrow. */
+/* Full-year tiles for the selected site, in the top row level with the
+   top-bar buttons. main.js (positionMetricsStrip) fits the strip into the
+   gap between the brand / left column and the Sky panel / top-right buttons;
+   the tiles wrap to 2×2 when the gap is narrow. */
 .metrics-strip {
   position: absolute;
-  top: 56px;
+  top: 8px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 50;
