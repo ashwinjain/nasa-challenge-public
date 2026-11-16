@@ -71,6 +71,9 @@ function updateWalkHint() {
     : dist < 1
       ? `<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk · <kbd>Shift</kbd> sprint`
       : `${far} from lander · <kbd>R</kbd> back`;
+  // Its width changes with the text: keep it beside Focus and the stats clear of it.
+  placeWalkHint();
+  positionMetricsStrip();
 }
 
 // ── Off-screen body indicators ──
@@ -625,7 +628,9 @@ function positionSitePanel() {
   }
   const panel = document.getElementById("panel-site-panel");
   if (!panel || panel.style.display === "none") return;
-  const top = sb.bottom + 8;
+  // Enlarged, the card lays over the Sites list for the room; otherwise it
+  // sits under it.
+  const top = panel.classList.contains("expanded") ? sb.top : sb.bottom + 8;
   panel.style.top = top + "px";
   panel.style.maxHeight = Math.max(60, floor - top) + "px";
 }
@@ -645,8 +650,11 @@ function positionMetricsStrip() {
     return r.width ? r : null;
   };
   const brand = shown("top-bar-brand");
-  const left = Math.max(sb.right, brand ? brand.right : 0) + 12;
-  const rightEdges = ["sky-panel", "focus-hint", "plan-btn"].map(shown).filter(Boolean).map((r) => r.left);
+  // The enlarged landing card reaches up beside the brand: stay right of it.
+  const card = document.getElementById("panel-site-panel");
+  const big = card && card.classList.contains("expanded") ? shown("panel-site-panel") : null;
+  const left = Math.max(sb.right, brand ? brand.right : 0, big ? big.right : 0) + 12;
+  const rightEdges = ["sky-panel", "walk-hint", "focus-hint", "plan-btn"].map(shown).filter(Boolean).map((r) => r.left);
   const right = Math.min(window.innerWidth, ...rightEdges) - 12;
   el.classList.add("fitted");
   el.style.left = left + "px";
@@ -1287,22 +1295,25 @@ function setLandingMarkers() {
   // Label/value rows instead of sentences; the context sentence lives in the
   // header's ⓘ tooltip.
   const rows = (pairs) => `<dl class="ps-kv">${pairs.map(([k, v, cls = ""]) => `<dt>${k}</dt><dd class="${cls}">${v}</dd>`).join("")}</dl>`;
-  const block = (title, tag, body) =>
-    `<div class="ps-blk"><div class="ps-blk-h">${title}${tag ? `<span class="ps-tag">${tag}</span>` : ""}</div>${body}</div>`;
+  // A block with `go` is a button: it turns you to face that marker (and
+  // stands you on the surface first from the globe). See goToSpot.
+  const block = (title, tag, body, go = null) => go
+    ? `<div class="ps-blk ps-blk-go" data-spot="${go.spot}" role="button" tabindex="0" title="Turn to face the ${go.what}">` +
+      `<div class="ps-blk-h"><span class="ps-blk-title">${title}<span class="ps-go-ico" aria-hidden="true">↗</span></span>` +
+      `${tag ? `<span class="ps-tag">${tag}</span>` : ""}</div>${body}` +
+      `<div class="ps-go-hint">Click to face the ${go.what} on the surface →</div></div>`
+    : `<div class="ps-blk"><div class="ps-blk-h">${title}${tag ? `<span class="ps-tag">${tag}</span>` : ""}</div>${body}</div>`;
   setPanelBody(
     block("Landing zone", `${zoneM} m`, rows([
       ["Flat (under 10°)", `${Math.round(t.flat_share * 100)}%`, "ok"],
       ["Steepest", `${t.steepest_deg.toFixed(0)}°`],
-    ])) +
-    // The Panels block is a button: it turns you to face the panel pole
-    // (and stands you on the surface first from the globe).
+    ]), { spot: "zone", what: "landing zone" }) +
     (t.panel ? block("Panels", `at ${PANEL_HEIGHT_M} m · full year ${year}`, rows([
       ["Sunlit", sunlit, "sun"],
       ["Longest night", night, "night"],
       ["Distance", `${Math.round(t.panel.distance_m)} m ${compass(t.panel.bearing_deg)}`],
       ["Slope", `${t.panel.slope_deg.toFixed(0)}°`],
-    ]) + `<div class="ps-go-hint">Click to face the panels on the surface →</div>`)
-      .replace('<div class="ps-blk">', '<div class="ps-blk ps-blk-go" data-spot="panel" role="button" tabindex="0" title="Turn to face the panel spot">') : "") +
+    ]), { spot: "panel", what: "panels" }) : "") +
     (showKit ? block("Power kit", PICK_LABEL[t.panel?.pick] || "", rows([
       ["Total", kit ? kit.total : dash],
       ["Battery", kit ? kit.battery : dash],
@@ -1317,7 +1328,7 @@ function setLandingMarkers() {
   panelLabels = {};
   addSurfaceLabel("lander", "lander", `Landing target #${t.rank}, you are here`, region);
   addSurfaceLabel("zone", "zone", `${zoneM} m landing zone`,
-    `${Math.round(t.flat_share * 100)}% under 10° · the lander could touch down anywhere in it`);
+    `${Math.round(t.flat_share * 100)}% under 10° · the lander could touch down anywhere in it`, true);
   const spots = [];
   if (t.panel) {
     addSurfaceLabel("panel", "sun", `Panels at ${PANEL_HEIGHT_M} m`,
@@ -1780,10 +1791,28 @@ function setupPanelToggles() {
     });
   });
   initInfoTips();
+  // The landing card's ⤢ enlarges it in place: bigger text, more room, over
+  // the Sites list. It stays live and clickable, and nothing else pauses.
+  const card = document.getElementById("panel-site-panel");
+  const expandBtn = document.getElementById("ps-expand");
+  const setExpanded = (on) => {
+    card.classList.toggle("expanded", on);
+    if (on) card.classList.remove("collapsed");
+    expandBtn.title = on ? "Shrink the card (Esc)" : "Enlarge the card";
+    expandBtn.setAttribute("aria-pressed", String(on));
+    layoutHud();
+  };
+  expandBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setExpanded(!card.classList.contains("expanded"));
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && card.classList.contains("expanded")) setExpanded(false);
+  });
   // The landing card collapses from anywhere on its header, down to one row.
   document.querySelectorAll(".ps-header").forEach((h) => {
     h.addEventListener("click", (e) => {
-      if (e.target.closest(".ps-info")) return;
+      if (e.target.closest(".ps-info, .ps-expand")) return;
       document.getElementById(h.dataset.panel).classList.toggle("collapsed");
     });
   });
@@ -1801,6 +1830,21 @@ function placeFocusHint() {
   if (!plan.width || !hint) return;
   hint.style.right = (window.innerWidth - plan.left + 8) + "px";
   hint.style.top = (plan.top + (plan.height - hint.offsetHeight) / 2) + "px";
+  placeWalkHint();
+}
+
+// The surface view's WASD / distance hint sits just left of the Focus
+// button, level with it.
+function placeWalkHint() {
+  const hint = document.getElementById("walk-hint");
+  const focus = document.getElementById("focus-hint");
+  if (!hint || hint.hidden || !focus) return;
+  const f = focus.getBoundingClientRect();
+  if (!f.width) return;
+  hint.style.left = "auto";
+  hint.style.bottom = "auto";
+  hint.style.right = (window.innerWidth - f.left + 8) + "px";
+  hint.style.top = (f.top + (f.height - hint.offsetHeight) / 2) + "px";
 }
 
 // The time scrubber has the strip above the status bar to itself. This is the

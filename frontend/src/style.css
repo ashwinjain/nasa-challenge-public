@@ -1721,11 +1721,32 @@ body.view-surface .ps-surface-hint { display: none; }
 #info-tip[hidden] { display: none; }
 #panel-site-panel.collapsed .ps-header { border-bottom-color: transparent; }
 .ps-blk { padding: 0.5rem 0; }
-/* The Panels block turns you to face the panel pole (main.js). */
+/* The Landing zone and Panels blocks turn you to face their marker (main.js):
+   gray on hover, with a ↗ by the title and the hint line brightening. */
 .ps-blk-go { cursor: pointer; margin: 0 -0.45rem; padding-left: 0.45rem; padding-right: 0.45rem; border-radius: var(--radius-sm); transition: background 0.12s ease; }
-.ps-blk-go:hover { background: rgba(255, 255, 255, 0.06); }
+.ps-blk-go:hover { background: rgba(255, 255, 255, 0.08); }
+.ps-blk-go:active { background: rgba(255, 255, 255, 0.12); }
 .ps-blk-go:focus-visible { outline: 1px solid var(--border-bright); outline-offset: 1px; }
-.ps-blk-go .ps-go-hint { font-size: 0.6rem; color: var(--text-dim); margin-top: 0.2rem; }
+.ps-blk-go .ps-go-hint { font-size: 0.6rem; color: var(--text-dim); margin-top: 0.2rem; transition: color 0.12s ease; }
+.ps-blk-go:hover .ps-go-hint { color: var(--text); }
+.ps-blk-title { display: inline-flex; align-items: center; gap: 0.3rem; }
+.ps-go-ico { font-size: 0.7rem; letter-spacing: 0; color: var(--text-dim); transition: color 0.12s ease, transform 0.12s ease; }
+.ps-blk-go:hover .ps-go-ico { color: var(--text); transform: translate(1px, -1px); }
+
+/* ⤢ in the card header: enlarges the card in place (main.js setExpanded). */
+.ps-expand[aria-pressed="true"] { color: var(--text); }
+#panel-site-panel.expanded { width: 360px; min-width: 360px; }
+#panel-site-panel.expanded .ps-head-text h3 { font-size: 1.05rem; }
+#panel-site-panel.expanded .ps-head-sub { font-size: 0.76rem; }
+#panel-site-panel.expanded .ps-head-kit { font-size: 1.1rem; }
+#panel-site-panel.expanded .ps-blk { padding: 0.75rem 0; }
+#panel-site-panel.expanded .ps-blk-h { font-size: 0.72rem; margin-bottom: 0.45rem; }
+#panel-site-panel.expanded .ps-tag { font-size: 0.7rem; }
+#panel-site-panel.expanded .ps-go-ico { font-size: 0.85rem; }
+#panel-site-panel.expanded .ps-kv { row-gap: 0.35rem; }
+#panel-site-panel.expanded .ps-kv dt { font-size: 0.84rem; }
+#panel-site-panel.expanded .ps-kv dd { font-size: 0.9rem; }
+#panel-site-panel.expanded .ps-go-hint { font-size: 0.74rem; }
 .ps-blk + .ps-blk { border-top: 1px solid var(--border); }
 .ps-blk:first-child { padding-top: 0.1rem; }
 .ps-blk-h {
